@@ -1,6 +1,4 @@
-
 import React from "react";
-
 
 // SDG impact data
 const sdgData = [

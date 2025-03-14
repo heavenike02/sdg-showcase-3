@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Search, Users, BookOpen, ArrowRight, BarChart3, Globe, Database, Lightbulb } from "lucide-react";
-import { SDGImpactChart } from "@/components/SDGImpactChart";
+import Image from "next/image";
+import { Users, ArrowRight, Globe, Database, BookOpen } from "lucide-react";
+
 import { Navbar } from "@/components/Navbar";
 import SdgCircle from "@/components/sdg-circle"
 
@@ -14,10 +15,13 @@ const Index = () => {
       <div className="relative min-h-screen flex flex-col">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/50"></div>
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f" 
             alt="Students collaborating on sustainable development project"
             className="w-full h-full object-cover"
+            width={1920}
+            height={1080}
+            priority
           />
         </div>
         
@@ -217,10 +221,12 @@ const Index = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                <img 
+                <Image 
                   src="/donpassy.jpg" 
                   alt="Prof. Don Passey" 
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
                 />
               </div>
               <h3 className="text-xl mb-1 text-center">Prof. Don Passey</h3>
@@ -229,10 +235,12 @@ const Index = () => {
             
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                <img 
+                <Image 
                   src="/rosa.jpg" 
                   alt="Prof. Rosa Bottino" 
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
                 />
               </div>
               <h3 className="text-xl mb-1 text-center">Prof. Rosa Bottino</h3>
@@ -241,10 +249,12 @@ const Index = () => {
             
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                <img 
+                <Image 
                   src="/sharon.jpg" 
                   alt="Mrs. Sharon Singh" 
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
                 />
               </div>
               <h3 className="text-xl mb-1 text-center">Mrs. Sharon Singh</h3>
@@ -253,10 +263,12 @@ const Index = () => {
             
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                <img 
+                <Image 
                   src="/christoph.jpg" 
                   alt="Dr. Christoph Reffay" 
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
                 />
               </div>
               <h3 className="text-xl mb-1 text-center">Dr. Christoph Reffay</h3>
@@ -265,10 +277,12 @@ const Index = () => {
             
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                <img 
+                <Image 
                   src="/mary.jpg" 
                   alt="Dr. Mary Webb" 
                   className="w-full h-full object-cover"
+                  width={128}
+                  height={128}
                 />
               </div>
               <h3 className="text-xl mb-1 text-center">Dr. Mary Webb</h3>

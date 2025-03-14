@@ -1,27 +1,19 @@
 'use client'
 import { useState } from "react";
 import Link from "next/link";
-import { Search as SearchIcon, BookOpen, Globe, Users } from "lucide-react";
+import { Search as SearchIcon, Globe, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSDGColor } from "@/lib/sdgcolor";
-import {  Card,
-    CardHeader,
-    CardFooter,
-    CardTitle,
-    CardAction,
-    CardDescription,
-    CardContent, } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Search = () => {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setHasSearched(true);
   };
 
   // Mock search results with expanded profiles

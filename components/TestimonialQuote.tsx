@@ -1,5 +1,5 @@
 
-import { QuoteIcon } from "lucide-react";
+
 
 export const TestimonialQuote = () => {
   return (
