@@ -1,29 +1,18 @@
 import React from "react";
 
 // SDG impact data
-const sdgData = [
-  { name: "Quality Education", value: 78, color: "#c5192d" },
-  { name: "Gender Equality", value: 65, color: "#ff3a21" },
-  { name: "Clean Water", value: 42, color: "#26bde2" },
-  { name: "Climate Action", value: 86, color: "#3f7e44" },
-  { name: "Decent Work", value: 70, color: "#a21942" },
-  { name: "Partnerships", value: 92, color: "#19486a" },
-];
+//const sdgData = [
+  //{ name: "Quality Education", value: 78, color: "#c5192d" },
+  //{ name: "Gender Equality", value: 65, color: "#ff3a21" },
+  //{ name: "Clean Water", value: 42, color: "#26bde2" },
+  //{ name: "Climate Action", value: 86, color: "#3f7e44" },
+  //{ name: "Decent Work", value: 70, color: "#a21942" },
+  //{ name: "Partnerships", value: 92, color: "#19486a" },
+//];
 
 // Custom tooltip component
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-3 shadow-lg rounded-md border border-slate-100">
-        <p className="font-medium">{payload[0].payload.name}</p>
-        <p className="text-sm">
-          Impact Score: <span className="font-bold">{payload[0].value}%</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+
+
 
 export const SDGImpactChart = () => {
   return (

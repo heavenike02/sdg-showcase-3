@@ -255,7 +255,7 @@ const sdgGoals = [
       { id: "11.3", name: "Inclusive and sustainable urbanization", url: "https://sdgs.un.org/goals/goal11#targets" },
       {
         id: "11.4",
-        name: "Protect the world's cultural and natural heritage",
+        name: "Protect the world&apos;s cultural and natural heritage",
         url: "https://sdgs.un.org/goals/goal11#targets",
       },
       {

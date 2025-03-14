@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search as SearchIcon, Globe, Users } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";

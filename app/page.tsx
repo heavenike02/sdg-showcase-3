@@ -37,7 +37,7 @@ const Index = () => {
                   SDG Showcase
                 </h1>
                 <p className="text-lg text-white/90 max-w-xl">
-                  At IFIP TC3, we're committed to driving innovation that advances the United Nations Sustainable Development Goals (SDGs) through the power of ICT. 
+                  At IFIP TC3, we&apos;re committed to driving innovation that advances the United Nations Sustainable Development Goals (SDGs) through the power of ICT. 
                 </p>
                 <div className="pt-4">
                   <Button asChild size="lg" className="rounded-full px-8 h-12 bg-white text-foreground hover:bg-white/90">
