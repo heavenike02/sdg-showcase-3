@@ -4,7 +4,7 @@ import { Facebook, Twitter, Linkedin, Mail } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="bg-slate-50 border-t border-slate-200/80">
+    <div className="bg-slate-50 border-t border-slate-200/80">
       <div className="page-container py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
@@ -71,6 +71,6 @@ export const Footer = () => {
           </p>
         </div>
       </div>
-    </footer>
+    </div>
   );
 };

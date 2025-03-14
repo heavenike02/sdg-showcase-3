@@ -4,6 +4,9 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { ChevronLeft } from "lucide-react"
 
+// Helper function to round numbers to 4 decimal places
+const round = (num: number) => Number(num.toFixed(4))
+
 // SDG data with official colors, descriptions and targets (subsections)
 const sdgGoals = [
   {
@@ -431,10 +434,9 @@ export default function SdgCircle() {
 
   const centerX = 250
   const centerY = 250
-  const radius = 200
+ 
   const innerRadius = 80
-  const angleStep = (2 * Math.PI) / sdgGoals.length
-
+  
   const handleGoalClick = (goalId: number) => {
     setSelectedGoal(goalId)
   }
@@ -460,34 +462,18 @@ export default function SdgCircle() {
 
         <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle">
           {sdgGoals.map((goal, index) => {
-            const startAngle = index * angleStep - Math.PI / 2
-            const endAngle = (index + 1) * angleStep - Math.PI / 2
-
-            const startX = centerX + innerRadius * Math.cos(startAngle)
-            const startY = centerY + innerRadius * Math.sin(startAngle)
-            const endX = centerX + radius * Math.cos(startAngle)
-            const endY = centerY + radius * Math.sin(startAngle)
-            const end2X = centerX + radius * Math.cos(endAngle)
-            const end2Y = centerY + radius * Math.sin(endAngle)
-            const start2X = centerX + innerRadius * Math.cos(endAngle)
-            const start2Y = centerY + innerRadius * Math.sin(endAngle)
-
-            const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0
-
-            const pathData = `
-              M ${startX} ${startY}
-              L ${endX} ${endY}
-              A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end2X} ${end2Y}
-              L ${start2X} ${start2Y}
-              A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startX} ${startY}
-            `
-
-            // Calculate position for the text
-            const textAngle = startAngle + angleStep / 2
-            const textRadius = innerRadius + (radius - innerRadius) / 2
-            const textX = centerX + textRadius * Math.cos(textAngle)
-            const textY = centerY + textRadius * Math.sin(textAngle)
-
+            const angle = (index * 360) / sdgGoals.length
+            const nextAngle = ((index + 1) * 360) / sdgGoals.length
+            
+            // Calculate coordinates with rounded numbers
+            const startX = round(250 + 200 * Math.cos((angle * Math.PI) / 180))
+            const startY = round(250 + 200 * Math.sin((angle * Math.PI) / 180))
+            const endX = round(250 + 200 * Math.cos((nextAngle * Math.PI) / 180))
+            const endY = round(250 + 200 * Math.sin((nextAngle * Math.PI) / 180))
+            const largeArcFlag = nextAngle - angle <= 180 ? 0 : 1
+            
+            const path = `M 250 250 L ${startX} ${startY} A 200 200 0 ${largeArcFlag} 1 ${endX} ${endY} Z`
+            
             return (
               <g
                 key={goal.id}
@@ -500,32 +486,25 @@ export default function SdgCircle() {
                 tabIndex={0}
               >
                 <path
-                  d={pathData}
+                  d={path}
                   fill={goal.color}
                   stroke="white"
                   strokeWidth="2"
                   className={cn(
                     "transition-all duration-200",
-                    hoveredGoal === goal.id
-                      ? "opacity-100 transform scale-105 origin-center"
-                      : hoveredGoal
-                        ? "opacity-60"
-                        : "opacity-100",
-                    selectedGoal === goal.id ? "opacity-100 ring-2 ring-offset-2 ring-primary" : ""
+                    selectedGoal === goal.id ? "opacity-100" : "opacity-80 hover:opacity-100"
                   )}
                 />
                 <text
-                  x={textX}
-                  y={textY}
+                  x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                  y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="white"
                   fontSize="14"
                   fontWeight="bold"
                   className="select-none pointer-events-none"
-                  style={{
-                    textShadow: "0px 0px 3px rgba(0,0,0,0.5)",
-                  }}
+                  style={{ textShadow: "0px 0px 3px rgba(0,0,0,0.5)" }}
                 >
                   {goal.id}
                 </text>
