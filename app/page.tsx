@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, Users, BookOpen, ArrowRight, BarChart3, Globe, Database, Lightbulb } from "lucide-react";
 import { SDGImpactChart } from "@/components/SDGImpactChart";
 import { Navbar } from "@/components/Navbar";
+import SdgCircle from "@/components/sdg-circle"
 
 const Index = () => {
   return (
@@ -65,6 +66,7 @@ const Index = () => {
           <div className="flex flex-col space-y-3 mb-8">
             <div className="flex items-center">
               <span className="dot-indicator"></span>
+              <div className="w-2 h-2 rounded-full bg-primary mx-2"></div>
               <span className="text-sm font-medium text-foreground">About Us</span>
             </div>
             <h2 className="text-3xl md:text-4xl">Our Organization</h2>
@@ -126,6 +128,7 @@ const Index = () => {
           <div className="flex flex-col space-y-3 mb-12">
             <div className="flex items-center">
               <span className="dot-indicator"></span>
+              <div className="w-2 h-2 rounded-full bg-primary mx-2"></div>
               <span className="text-sm font-medium text-foreground">Our SDG Impact</span>
             </div>
             <h2 className="text-3xl md:text-4xl">Measuring our contributions</h2>
@@ -134,7 +137,8 @@ const Index = () => {
             </p>
           </div>
           <div className="card">
-            <SDGImpactChart />
+
+          <SdgCircle />           
           </div>
         </div>
       </section>
@@ -145,6 +149,7 @@ const Index = () => {
           <div className="flex flex-col space-y-3 mb-12">
             <div className="flex items-center">
               <span className="dot-indicator"></span>
+              <div className="w-2 h-2 rounded-full bg-primary mx-2"></div>
               <span className="text-sm font-medium text-foreground">Why choose us</span>
             </div>
             <h2 className="text-3xl md:text-4xl">Providing Excellence and Expertise in Every Solution</h2>
@@ -200,6 +205,7 @@ const Index = () => {
           <div className="flex flex-col space-y-3 mb-12 text-center">
             <div className="flex items-center justify-center">
               <span className="dot-indicator"></span>
+              <div className="w-2 h-2 rounded-full bg-primary mx-2"></div>
               <span className="text-sm font-medium text-foreground">Executive Committee</span>
             </div>
             <h2 className="text-3xl md:text-4xl">Meet our Executive Committee</h2>

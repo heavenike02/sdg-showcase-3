@@ -50,7 +50,6 @@ export const SDGImpactChart = () => {
         </div>
         
         <div className="w-full md:w-2/3 h-80">
-     yews
         </div>
       </div>
     </div>
