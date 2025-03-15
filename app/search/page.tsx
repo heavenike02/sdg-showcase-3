@@ -1,107 +1,100 @@
 'use client'
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search as SearchIcon, Globe, Users } from "lucide-react";
+import { Search as SearchIcon, Globe, Users, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSDGColor } from "@/lib/sdgcolor";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { searchAssessments, SearchParams } from "@/queries/fetch-assessment-data";
+
+// Define Assessment type based on database schema
+interface Assessment {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  university: string;
+  university_school: string;
+  title: string;
+  objectives: string;
+  targets: Record<string, any>; // JSONB in the database
+  tags: string[];
+  modules: Record<string, any>; // JSONB in the database
+  publications: string;
+  [key: string]: any; // Add index signature for other unknown properties
+}
 
 const Search = () => {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [results, setResults] = useState<Assessment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Function to get primary SDG from targets
+  const getPrimarySDG = (targets: Record<string, any> | null): number => {
+    if (!targets || typeof targets !== 'object') {
+      return 0;
+    }
+    
+    // Try to find the primary SDG - this logic depends on how targets are stored
+    const targetKeys = Object.keys(targets);
+    return targetKeys.length > 0 ? parseInt(targetKeys[0]) : 0;
   };
 
-  // Mock search results with expanded profiles
-  const searchResults = [
-    {
-      id: "daniel-norton",
-      name: "Dr. Daniel Norton",
-      title: "Lecturer in Economics",
-      department: "J.E. Cairnes School of Business and Economics",
-      institution: "University of Galway",
-      interests: ["Environmental Economics", "Sustainable Use of the Sea", "Natural Capital Accounting", "Marine Ecosystem Services"],
-      primarySDG: 14,
-      sdgs: [14, 13, 8, 17],
-      image: "https://placehold.co/100x100/0A97D9/FFFFFF/png?text=DN"
-    },
-    {
-      id: "jane-smith",
-      name: "Dr. Jane Smith",
-      title: "Professor of Economics",
-      department: "School of Economics",
-      institution: "University of Galway",
-      interests: ["Sustainable Development", "Environmental Economics", "Climate Change Policy"],
-      primarySDG: 13,
-      sdgs: [13, 7, 11],
-      image: "https://placehold.co/100x100/3F7E44/FFFFFF/png?text=JS"
-    },
-    {
-      id: "john-doe",
-      name: "Dr. John Doe",
-      title: "Associate Professor",
-      department: "Business School",
-      institution: "University of Galway",
-      interests: ["Social Enterprise", "Corporate Sustainability", "Ethical Business"],
-      primarySDG: 8,
-      sdgs: [8, 12, 10],
-      image: "https://placehold.co/100x100/A21942/FFFFFF/png?text=JD"
-    },
-    {
-      id: "sarah-johnson",
-      name: "Dr. Sarah Johnson",
-      title: "Senior Lecturer",
-      department: "Marine Science",
-      institution: "University of Galway",
-      interests: ["Marine Biology", "Ocean Conservation", "Coastal Ecosystems"],
-      primarySDG: 14,
-      sdgs: [14, 15, 13],
-      image: "https://placehold.co/100x100/0A97D9/FFFFFF/png?text=SJ"
-    },
-    {
-      id: "michael-chen",
-      name: "Dr. Michael Chen",
-      title: "Research Fellow",
-      department: "Renewable Energy",
-      institution: "University of Galway",
-      interests: ["Clean Energy", "Sustainable Technology", "Climate Mitigation"],
-      primarySDG: 7,
-      sdgs: [7, 9, 13],
-      image: "https://placehold.co/100x100/FCC30B/FFFFFF/png?text=MC"
-    }
-  ];
-
-  // Helper function to get SDG color
-
-
-  // Filter results based on search query and active filter
-  const filteredResults = searchResults.filter(result => {
-    // First filter by search query
-    const matchesQuery = 
-      query === "" || 
-      result.name.toLowerCase().includes(query.toLowerCase()) ||
-      result.title.toLowerCase().includes(query.toLowerCase()) ||
-      result.department.toLowerCase().includes(query.toLowerCase()) ||
-      result.interests.some(interest => interest.toLowerCase().includes(query.toLowerCase()));
+  // Format interests from objectives text
+  const getInterests = (objectives: string): string[] => {
+    if (!objectives) return [];
     
-    // Then filter by SDG category if not "all"
-    if (activeFilter === "all") {
-      return matchesQuery;
-    } else if (activeFilter === "marine") {
-      return matchesQuery && result.sdgs.includes(14);
-    } else if (activeFilter === "climate") {
-      return matchesQuery && result.sdgs.includes(13);
-    } else if (activeFilter === "economic") {
-      return matchesQuery && (result.sdgs.includes(8) || result.sdgs.includes(12));
-    }
+    // Simple split by comma or period for now
+    // In a real app, this might need more sophisticated parsing
+    return objectives
+      .split(/[,.;]+/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0)
+      .slice(0, 5); // Limit to 5 interests
+  };
+
+  // Fetch data function
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
     
-    return matchesQuery;
-  });
+    try {
+      const searchParams: SearchParams = {
+        query,
+        filter: activeFilter as 'all' | 'marine' | 'climate' | 'economic'
+      };
+      
+      const data = await searchAssessments(searchParams);
+      setResults(data as Assessment[]);
+    } catch (err) {
+      console.error("Error fetching search results:", err);
+      setError("Failed to load search results. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data load
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Handle search form submission
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchData();
+  };
+
+  // Handle filter change
+  useEffect(() => {
+    fetchData();
+  }, [activeFilter]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 to-slate-100">
@@ -119,6 +112,13 @@ const Search = () => {
             </p>
           </div>
 
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <Card className="mb-8">
             <CardContent className="pt-6">
               <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-6">
@@ -129,9 +129,22 @@ const Search = () => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                  <SearchIcon className="mr-2 h-4 w-4" />
-                  Search
+                <Button 
+                  type="submit" 
+                  className="bg-primary hover:bg-primary/90"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                      Searching...
+                    </span>
+                  ) : (
+                    <>
+                      <SearchIcon className="mr-2 h-4 w-4" />
+                      Search
+                    </>
+                  )}
                 </Button>
               </form>
 
@@ -158,61 +171,81 @@ const Search = () => {
           </Card>
 
           <div className="space-y-4">
-            {filteredResults.length > 0 ? (
-              filteredResults.map((result) => (
-                <Card key={result.id} className="transition-all hover:shadow-sm">
-                  <CardContent className="py-6">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        <div 
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-semibold text-white"
-                          style={{ backgroundColor: getSDGColor(result.primarySDG) }}
-                        >
-                          {result.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                          <div>
-                            <CardTitle className="text-xl font-semibold mb-1">{result.name}</CardTitle>
-                            <CardDescription className="text-muted-foreground">
-                              {result.title} • {result.department}
-                            </CardDescription>
+            {loading ? (
+              <Card className="text-center">
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                    <p className="text-muted-foreground">Loading search results...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : results.length > 0 ? (
+              results.map((result) => {
+                const primarySDG = getPrimarySDG(result.targets);
+                const interests = getInterests(result.objectives);
+                
+                return (
+                  <Card key={result.id} className="transition-all hover:shadow-sm">
+                    <CardContent className="py-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div 
+                            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-semibold text-white"
+                            style={{ backgroundColor: getSDGColor(primarySDG) }}
+                          >
+                            {`${result.first_name?.[0] || ''}${result.last_name?.[0] || ''}`}
                           </div>
-                          <Button 
-                            asChild 
-                            variant="outline" 
-                            className="md:self-start shrink-0"
-                          >
-                            <Link href={`/profile/${result.id}`}>View Profile</Link>
-                          </Button>
                         </div>
-                        
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {result.interests.map((interest) => (
-                            <span
-                              key={interest}
-                              className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div>
+                              <CardTitle className="text-xl font-semibold mb-1">
+                                {result.first_name} {result.last_name}
+                              </CardTitle>
+                              <CardDescription className="text-muted-foreground">
+                                {result.title} • {result.university_school || result.university}
+                              </CardDescription>
+                            </div>
+                            <Button 
+                              asChild 
+                              variant="outline" 
+                              className="md:self-start shrink-0"
                             >
-                              {interest}
-                            </span>
-                          ))}
-                        </div>
-                        
-                        <div className="flex items-center gap-2 mt-4">
-                          <span className="text-sm text-muted-foreground">Primary SDG:</span>
-                          <span 
-                            className="px-2.5 py-0.5 rounded-md text-sm font-medium text-white"
-                            style={{ backgroundColor: getSDGColor(result.primarySDG) }}
-                          >
-                            SDG {result.primarySDG}
-                          </span>
+                              <Link href={`/profile/${result.id}`}>View Profile</Link>
+                            </Button>
+                          </div>
+                          
+                          {interests.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {interests.map((interest, idx) => (
+                                <span
+                                  key={idx}
+                                  className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
+                                >
+                                  {interest}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {primarySDG > 0 && (
+                            <div className="flex items-center gap-2 mt-4">
+                              <span className="text-sm text-muted-foreground">Primary SDG:</span>
+                              <span 
+                                className="px-2.5 py-0.5 rounded-md text-sm font-medium text-white"
+                                style={{ backgroundColor: getSDGColor(primarySDG) }}
+                              >
+                                SDG {primarySDG}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <Card className="text-center">
                 <CardContent className="py-6">
