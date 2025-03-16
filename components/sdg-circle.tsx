@@ -1,436 +1,55 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Target,   Info, Search, Globe, Lock,  } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { sdgGoals, SdgTarget } from "@/lib/sdg-data"
 
 // Helper function to round numbers to 4 decimal places
 const round = (num: number) => Number(num.toFixed(4))
 
-// SDG data with official colors, descriptions and targets (subsections)
-const sdgGoals = [
-  {
-    id: 1,
-    name: "No Poverty",
-    color: "#E5243B",
-    url: "https://sdgs.un.org/goals/goal1",
-    targets: [
-      { id: "1.1", name: "Eradicate extreme poverty", url: "https://sdgs.un.org/goals/goal1#targets" },
-      { id: "1.2", name: "Reduce poverty by at least 50%", url: "https://sdgs.un.org/goals/goal1#targets" },
-      { id: "1.3", name: "Implement social protection systems", url: "https://sdgs.un.org/goals/goal1#targets" },
-      { id: "1.4", name: "Equal rights to ownership, basic services", url: "https://sdgs.un.org/goals/goal1#targets" },
-      { id: "1.5", name: "Build resilience to environmental threats", url: "https://sdgs.un.org/goals/goal1#targets" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Zero Hunger",
-    color: "#DDA63A",
-    url: "https://sdgs.un.org/goals/goal2",
-    targets: [
-      { id: "2.1", name: "Universal access to safe food", url: "https://sdgs.un.org/goals/goal2#targets" },
-      { id: "2.2", name: "End all forms of malnutrition", url: "https://sdgs.un.org/goals/goal2#targets" },
-      { id: "2.3", name: "Double agricultural productivity", url: "https://sdgs.un.org/goals/goal2#targets" },
-      { id: "2.4", name: "Sustainable food production", url: "https://sdgs.un.org/goals/goal2#targets" },
-      { id: "2.5", name: "Maintain genetic diversity in food", url: "https://sdgs.un.org/goals/goal2#targets" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Good Health and Well-being",
-    color: "#4C9F38",
-    url: "https://sdgs.un.org/goals/goal3",
-    targets: [
-      { id: "3.1", name: "Reduce maternal mortality", url: "https://sdgs.un.org/goals/goal3#targets" },
-      {
-        id: "3.2",
-        name: "End preventable deaths under 5 years of age",
-        url: "https://sdgs.un.org/goals/goal3#targets",
-      },
-      { id: "3.3", name: "Fight communicable diseases", url: "https://sdgs.un.org/goals/goal3#targets" },
-      {
-        id: "3.4",
-        name: "Reduce mortality from non-communicable diseases",
-        url: "https://sdgs.un.org/goals/goal3#targets",
-      },
-      { id: "3.5", name: "Prevent and treat substance abuse", url: "https://sdgs.un.org/goals/goal3#targets" },
-    ],
-  },
-  {
-    id: 4,
-    name: "Quality Education",
-    color: "#C5192D",
-    url: "https://sdgs.un.org/goals/goal4",
-    targets: [
-      { id: "4.1", name: "Free primary and secondary education", url: "https://sdgs.un.org/goals/goal4#targets" },
-      {
-        id: "4.2",
-        name: "Equal access to quality pre-primary education",
-        url: "https://sdgs.un.org/goals/goal4#targets",
-      },
-      {
-        id: "4.3",
-        name: "Equal access to affordable technical education",
-        url: "https://sdgs.un.org/goals/goal4#targets",
-      },
-      {
-        id: "4.4",
-        name: "Increase the number of people with relevant skills",
-        url: "https://sdgs.un.org/goals/goal4#targets",
-      },
-      { id: "4.5", name: "Eliminate all discrimination in education", url: "https://sdgs.un.org/goals/goal4#targets" },
-    ],
-  },
-  {
-    id: 5,
-    name: "Gender Equality",
-    color: "#FF3A21",
-    url: "https://sdgs.un.org/goals/goal5",
-    targets: [
-      { id: "5.1", name: "End discrimination against women", url: "https://sdgs.un.org/goals/goal5#targets" },
-      { id: "5.2", name: "End all violence against women", url: "https://sdgs.un.org/goals/goal5#targets" },
-      {
-        id: "5.3",
-        name: "Eliminate forced marriages and genital mutilation",
-        url: "https://sdgs.un.org/goals/goal5#targets",
-      },
-      {
-        id: "5.4",
-        name: "Value unpaid care and promote shared responsibility",
-        url: "https://sdgs.un.org/goals/goal5#targets",
-      },
-      {
-        id: "5.5",
-        name: "Ensure full participation in leadership and decision-making",
-        url: "https://sdgs.un.org/goals/goal5#targets",
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: "Clean Water and Sanitation",
-    color: "#26BDE2",
-    url: "https://sdgs.un.org/goals/goal6",
-    targets: [
-      { id: "6.1", name: "Safe and affordable drinking water", url: "https://sdgs.un.org/goals/goal6#targets" },
-      {
-        id: "6.2",
-        name: "End open defecation and provide access to sanitation",
-        url: "https://sdgs.un.org/goals/goal6#targets",
-      },
-      {
-        id: "6.3",
-        name: "Improve water quality, wastewater treatment",
-        url: "https://sdgs.un.org/goals/goal6#targets",
-      },
-      { id: "6.4", name: "Increase water-use efficiency", url: "https://sdgs.un.org/goals/goal6#targets" },
-      {
-        id: "6.5",
-        name: "Implement integrated water resources management",
-        url: "https://sdgs.un.org/goals/goal6#targets",
-      },
-    ],
-  },
-  {
-    id: 7,
-    name: "Affordable and Clean Energy",
-    color: "#FCC30B",
-    url: "https://sdgs.un.org/goals/goal7",
-    targets: [
-      { id: "7.1", name: "Universal access to modern energy", url: "https://sdgs.un.org/goals/goal7#targets" },
-      {
-        id: "7.2",
-        name: "Increase global percentage of renewable energy",
-        url: "https://sdgs.un.org/goals/goal7#targets",
-      },
-      {
-        id: "7.3",
-        name: "Double the improvement in energy efficiency",
-        url: "https://sdgs.un.org/goals/goal7#targets",
-      },
-      {
-        id: "7.A",
-        name: "Promote access to research, technology and investments",
-        url: "https://sdgs.un.org/goals/goal7#targets",
-      },
-      {
-        id: "7.B",
-        name: "Expand and upgrade energy services for developing countries",
-        url: "https://sdgs.un.org/goals/goal7#targets",
-      },
-    ],
-  },
-  {
-    id: 8,
-    name: "Decent Work and Economic Growth",
-    color: "#A21942",
-    url: "https://sdgs.un.org/goals/goal8",
-    targets: [
-      { id: "8.1", name: "Sustainable economic growth", url: "https://sdgs.un.org/goals/goal8#targets" },
-      {
-        id: "8.2",
-        name: "Diversify, innovate and upgrade for economic productivity",
-        url: "https://sdgs.un.org/goals/goal8#targets",
-      },
-      { id: "8.3", name: "Promote policies to support job creation", url: "https://sdgs.un.org/goals/goal8#targets" },
-      {
-        id: "8.4",
-        name: "Improve resource efficiency in consumption and production",
-        url: "https://sdgs.un.org/goals/goal8#targets",
-      },
-      {
-        id: "8.5",
-        name: "Full employment and decent work with equal pay",
-        url: "https://sdgs.un.org/goals/goal8#targets",
-      },
-    ],
-  },
-  {
-    id: 9,
-    name: "Industry, Innovation and Infrastructure",
-    color: "#FD6925",
-    url: "https://sdgs.un.org/goals/goal9",
-    targets: [
-      {
-        id: "9.1",
-        name: "Develop sustainable, resilient infrastructure",
-        url: "https://sdgs.un.org/goals/goal9#targets",
-      },
-      {
-        id: "9.2",
-        name: "Promote inclusive and sustainable industrialization",
-        url: "https://sdgs.un.org/goals/goal9#targets",
-      },
-      {
-        id: "9.3",
-        name: "Increase access to financial services and markets",
-        url: "https://sdgs.un.org/goals/goal9#targets",
-      },
-      { id: "9.4", name: "Upgrade all industries for sustainability", url: "https://sdgs.un.org/goals/goal9#targets" },
-      {
-        id: "9.5",
-        name: "Enhance research and upgrade industrial technologies",
-        url: "https://sdgs.un.org/goals/goal9#targets",
-      },
-    ],
-  },
-  {
-    id: 10,
-    name: "Reduced Inequalities",
-    color: "#DD1367",
-    url: "https://sdgs.un.org/goals/goal10",
-    targets: [
-      { id: "10.1", name: "Reduce income inequalities", url: "https://sdgs.un.org/goals/goal10#targets" },
-      {
-        id: "10.2",
-        name: "Promote universal social, economic and political inclusion",
-        url: "https://sdgs.un.org/goals/goal10#targets",
-      },
-      {
-        id: "10.3",
-        name: "Ensure equal opportunities and end discrimination",
-        url: "https://sdgs.un.org/goals/goal10#targets",
-      },
-      {
-        id: "10.4",
-        name: "Adopt fiscal and social policies that promote equality",
-        url: "https://sdgs.un.org/goals/goal10#targets",
-      },
-      {
-        id: "10.5",
-        name: "Improve regulation of global financial markets",
-        url: "https://sdgs.un.org/goals/goal10#targets",
-      },
-    ],
-  },
-  {
-    id: 11,
-    name: "Sustainable Cities and Communities",
-    color: "#FD9D24",
-    url: "https://sdgs.un.org/goals/goal11",
-    targets: [
-      { id: "11.1", name: "Safe and affordable housing", url: "https://sdgs.un.org/goals/goal11#targets" },
-      {
-        id: "11.2",
-        name: "Affordable and sustainable transport systems",
-        url: "https://sdgs.un.org/goals/goal11#targets",
-      },
-      { id: "11.3", name: "Inclusive and sustainable urbanization", url: "https://sdgs.un.org/goals/goal11#targets" },
-      {
-        id: "11.4",
-        name: "Protect the world&apos;s cultural and natural heritage",
-        url: "https://sdgs.un.org/goals/goal11#targets",
-      },
-      {
-        id: "11.5",
-        name: "Reduce the adverse effects of natural disasters",
-        url: "https://sdgs.un.org/goals/goal11#targets",
-      },
-    ],
-  },
-  {
-    id: 12,
-    name: "Responsible Consumption and Production",
-    color: "#BF8B2E",
-    url: "https://sdgs.un.org/goals/goal12",
-    targets: [
-      {
-        id: "12.1",
-        name: "Implement the 10-Year Framework on Sustainable Consumption and Production",
-        url: "https://sdgs.un.org/goals/goal12#targets",
-      },
-      {
-        id: "12.2",
-        name: "Sustainable management and use of natural resources",
-        url: "https://sdgs.un.org/goals/goal12#targets",
-      },
-      { id: "12.3", name: "Halve global per capita food waste", url: "https://sdgs.un.org/goals/goal12#targets" },
-      {
-        id: "12.4",
-        name: "Responsible management of chemicals and waste",
-        url: "https://sdgs.un.org/goals/goal12#targets",
-      },
-      { id: "12.5", name: "Substantially reduce waste generation", url: "https://sdgs.un.org/goals/goal12#targets" },
-    ],
-  },
-  {
-    id: 13,
-    name: "Climate Action",
-    color: "#3F7E44",
-    url: "https://sdgs.un.org/goals/goal13",
-    targets: [
-      {
-        id: "13.1",
-        name: "Strengthen resilience to climate-related hazards",
-        url: "https://sdgs.un.org/goals/goal13#targets",
-      },
-      {
-        id: "13.2",
-        name: "Integrate climate change measures into policies",
-        url: "https://sdgs.un.org/goals/goal13#targets",
-      },
-      { id: "13.3", name: "Build knowledge on climate change", url: "https://sdgs.un.org/goals/goal13#targets" },
-      {
-        id: "13.A",
-        name: "Implement the UN Framework Convention on Climate Change",
-        url: "https://sdgs.un.org/goals/goal13#targets",
-      },
-      {
-        id: "13.B",
-        name: "Promote mechanisms to raise capacity for climate planning",
-        url: "https://sdgs.un.org/goals/goal13#targets",
-      },
-    ],
-  },
-  {
-    id: 14,
-    name: "Life Below Water",
-    color: "#0A97D9",
-    url: "https://sdgs.un.org/goals/goal14",
-    targets: [
-      { id: "14.1", name: "Reduce marine pollution", url: "https://sdgs.un.org/goals/goal14#targets" },
-      { id: "14.2", name: "Protect and restore ecosystems", url: "https://sdgs.un.org/goals/goal14#targets" },
-      { id: "14.3", name: "Reduce ocean acidification", url: "https://sdgs.un.org/goals/goal14#targets" },
-      { id: "14.4", name: "Sustainable fishing", url: "https://sdgs.un.org/goals/goal14#targets" },
-      { id: "14.5", name: "Conserve coastal and marine areas", url: "https://sdgs.un.org/goals/goal14#targets" },
-    ],
-  },
-  {
-    id: 15,
-    name: "Life on Land",
-    color: "#56C02B",
-    url: "https://sdgs.un.org/goals/goal15",
-    targets: [
-      {
-        id: "15.1",
-        name: "Conserve and restore terrestrial ecosystems",
-        url: "https://sdgs.un.org/goals/goal15#targets",
-      },
-      {
-        id: "15.2",
-        name: "End deforestation and restore degraded forests",
-        url: "https://sdgs.un.org/goals/goal15#targets",
-      },
-      {
-        id: "15.3",
-        name: "End desertification and restore degraded land",
-        url: "https://sdgs.un.org/goals/goal15#targets",
-      },
-      {
-        id: "15.4",
-        name: "Ensure conservation of mountain ecosystems",
-        url: "https://sdgs.un.org/goals/goal15#targets",
-      },
-      {
-        id: "15.5",
-        name: "Protect biodiversity and natural habitats",
-        url: "https://sdgs.un.org/goals/goal15#targets",
-      },
-    ],
-  },
-  {
-    id: 16,
-    name: "Peace, Justice and Strong Institutions",
-    color: "#00689D",
-    url: "https://sdgs.un.org/goals/goal16",
-    targets: [
-      { id: "16.1", name: "Reduce violence everywhere", url: "https://sdgs.un.org/goals/goal16#targets" },
-      {
-        id: "16.2",
-        name: "End abuse, exploitation, trafficking and violence against children",
-        url: "https://sdgs.un.org/goals/goal16#targets",
-      },
-      {
-        id: "16.3",
-        name: "Promote the rule of law and ensure equal access to justice",
-        url: "https://sdgs.un.org/goals/goal16#targets",
-      },
-      {
-        id: "16.4",
-        name: "Combat organized crime and illicit financial flows",
-        url: "https://sdgs.un.org/goals/goal16#targets",
-      },
-      {
-        id: "16.5",
-        name: "Substantially reduce corruption and bribery",
-        url: "https://sdgs.un.org/goals/goal16#targets",
-      },
-    ],
-  },
-  {
-    id: 17,
-    name: "Partnerships for the Goals",
-    color: "#19486A",
-    url: "https://sdgs.un.org/goals/goal17",
-    targets: [
-      {
-        id: "17.1",
-        name: "Strengthen domestic resource mobilization",
-        url: "https://sdgs.un.org/goals/goal17#targets",
-      },
-      {
-        id: "17.2",
-        name: "Implement all development assistance commitments",
-        url: "https://sdgs.un.org/goals/goal17#targets",
-      },
-      {
-        id: "17.3",
-        name: "Mobilize financial resources for developing countries",
-        url: "https://sdgs.un.org/goals/goal17#targets",
-      },
-      {
-        id: "17.4",
-        name: "Assist developing countries in attaining debt sustainability",
-        url: "https://sdgs.un.org/goals/goal17#targets",
-      },
-      { id: "17.5", name: "Invest in least-developed countries", url: "https://sdgs.un.org/goals/goal17#targets" },
-    ],
-  },
-]
+// SDG Target interface with impact assessment
+interface SdgTargetWithImpact extends SdgTarget {
+  impactType?: 'positive' | 'negative'
+  impactDirection?: 'direct' | 'indirect'
+  evidence?: string
+  hasContribution?: boolean
+}
 
-export default function SdgCircle() {
+interface SdgCircleProps {
+  selectedSdgs?: number[]
+  targetImpacts?: {
+    targetId: string
+    impactType: 'positive' | 'negative'
+    impactDirection: 'direct' | 'indirect'
+    evidence?: string
+  }[]
+  onTargetClick?: (targetId: string) => void
+  recommendedTags?: string[]
+  insights?: string
+  showSearchLink?: boolean
+}
+
+export default function SdgCircle({ 
+  
+  targetImpacts = [],
+  onTargetClick,
+  recommendedTags = [],
+  insights = "",
+  showSearchLink = true
+}: SdgCircleProps) {
+  const router = useRouter()
   const [hoveredGoal, setHoveredGoal] = useState<number | null>(null)
   const [selectedGoal, setSelectedGoal] = useState<number | null>(null)
+
+  // Get all SDGs that have at least one target with impact
+  const contributedSdgs = Array.from(new Set(
+    targetImpacts.map(impact => parseInt(impact.targetId.split('.')[0]))
+  )).sort((a, b) => a - b)
 
   const centerX = 250
   const centerY = 250
@@ -438,15 +57,165 @@ export default function SdgCircle() {
   const innerRadius = 80
   
   const handleGoalClick = (goalId: number) => {
+    // Only allow clicking on goals that have contributions
+    if (hasGoalContribution(goalId)) {
     setSelectedGoal(goalId)
+    }
   }
 
   const handleBackClick = () => {
     setSelectedGoal(null)
   }
 
+
+  // Check if a goal has any target contributions
+  const hasGoalContribution = (goalId: number): boolean => {
+    return contributedSdgs.includes(goalId)
+  }
+
+  // Enhance targets with impact information
+  const getEnhancedTargets = (goalId: number): SdgTargetWithImpact[] => {
+    const baseTargets = sdgGoals[goalId - 1]?.targets || []
+    
+    return baseTargets.map(target => {
+      const targetId = target.id
+      const impact = targetImpacts.find(ti => ti.targetId === targetId)
+      const hasContribution = !!impact
+      
+      return {
+        ...target,
+        impactType: impact?.impactType,
+        impactDirection: impact?.impactDirection,
+        evidence: impact?.evidence,
+        hasContribution
+      }
+    })
+  }
+
+  // Get only the targets with contributions for a goal
+  const getContributedTargets = (goalId: number): SdgTargetWithImpact[] => {
+    const allTargets = getEnhancedTargets(goalId)
+    return allTargets.filter(target => target.hasContribution)
+  }
+
+
+    
+
+  // Get the impact score for a goal (percentage of positive impacts)
+  const getGoalImpactScore = (goalId: number) => {
+    const goalPrefix = `${goalId}.`
+    const goalImpacts = targetImpacts.filter(ti => ti.targetId.startsWith(goalPrefix))
+    
+    if (goalImpacts.length === 0) return 0
+    
+    const positiveImpacts = goalImpacts.filter(ti => ti.impactType === 'positive').length
+    return Math.round((positiveImpacts / goalImpacts.length) * 100)
+  }
+
+  // Get direct vs indirect count for a goal
+  const getGoalDirectCount = (goalId: number) => {
+    const goalPrefix = `${goalId}.`
+    const goalImpacts = targetImpacts.filter(ti => ti.targetId.startsWith(goalPrefix))
+    
+    if (goalImpacts.length === 0) return { direct: 0, indirect: 0 }
+    
+    const directImpacts = goalImpacts.filter(ti => ti.impactDirection === 'direct').length
+    const indirectImpacts = goalImpacts.length - directImpacts
+    
+    return { direct: directImpacts, indirect: indirectImpacts }
+  }
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto">
+      {/* Insights section - if provided */}
+      {insights && (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Info className="h-5 w-5 text-primary" />
+            <h3 className="font-medium">SDG Impact Insights</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">{insights}</p>
+        </div>
+      )}
+
+      {/* Contribution summary */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="h-5 w-5 text-primary" />
+              <h3 className="font-medium">Researcher&apos;s SDG Contributions</h3>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+          {contributedSdgs.length > 0 ? (
+            contributedSdgs.map(sdgId => {
+              const goal = sdgGoals[sdgId - 1]
+              const impactCounts = getGoalDirectCount(sdgId)
+              
+              return (
+                <div 
+                  key={sdgId}
+                  className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
+                  onClick={() => handleGoalClick(sdgId)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                    style={{ backgroundColor: goal.color }}
+                  >
+                    {goal.id}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">{goal.name}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {impactCounts.direct > 0 && (
+                        <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
+                          {impactCounts.direct} Direct
+                        </Badge>
+                      )}
+                      {impactCounts.indirect > 0 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                          {impactCounts.indirect} Indirect
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <p className="text-sm text-muted-foreground">No SDG contributions found for this researcher.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Recommended tags - if provided */}
+      {recommendedTags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
+                  <Info className="h-4 w-4" />
+                  <span>Thematic Tags</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs max-w-xs">
+                  These tags represent key themes in the researcher&apos;s work related to sustainable development
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {recommendedTags.map((tag, idx) => (
+            <Badge key={idx} variant="outline" className="rounded-md border-primary/30 bg-primary/5">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       <div className="relative w-full aspect-square max-w-xl mx-auto">
         {/* Main SDG Circle View - Always visible */}
         {hoveredGoal && (
@@ -455,7 +224,44 @@ export default function SdgCircle() {
               <h2 className="font-bold text-xl mb-1">
                 {sdgGoals[hoveredGoal - 1].id}. {sdgGoals[hoveredGoal - 1].name}
               </h2>
-              <p className="text-sm text-muted-foreground">Click to see targets</p>
+              
+              {hasGoalContribution(hoveredGoal) ? (
+                <>
+                  <p className="text-sm text-primary font-medium">
+                    {getContributedTargets(hoveredGoal).length} target contributions
+                  </p>
+                  
+                  <div className="mt-2 flex items-center justify-center gap-2">
+                    <span className="text-xs">Impact:</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      getGoalImpactScore(hoveredGoal) >= 75 ? 'bg-green-100 text-green-800' :
+                      getGoalImpactScore(hoveredGoal) >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {getGoalImpactScore(hoveredGoal)}% Positive
+                    </span>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 h-7 text-xs pointer-events-auto"
+                    onClick={() => handleGoalClick(hoveredGoal)}
+                  >
+                    View Targets
+                  </Button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center mt-2">
+                  <Badge variant="outline" className="mb-1">
+                    <Lock className="h-3 w-3 mr-1" />
+                    No Contributions
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This researcher has no contributions to this SDG
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -474,13 +280,19 @@ export default function SdgCircle() {
             
             const path = `M 250 250 L ${startX} ${startY} A 200 200 0 ${largeArcFlag} 1 ${endX} ${endY} Z`
             
+            // Determine if this goal has contributions
+            const hasContribution = hasGoalContribution(goal.id)
+            
             return (
               <g
                 key={goal.id}
                 onClick={() => handleGoalClick(goal.id)}
                 onMouseEnter={() => setHoveredGoal(goal.id)}
                 onMouseLeave={() => setHoveredGoal(null)}
-                className="cursor-pointer"
+                className={cn(
+                  "transition-all duration-200",
+                  hasContribution ? "cursor-pointer" : "cursor-not-allowed"
+                )}
                 role="button"
                 aria-label={`SDG Goal ${goal.id}: ${goal.name}`}
                 tabIndex={0}
@@ -492,9 +304,48 @@ export default function SdgCircle() {
                   strokeWidth="2"
                   className={cn(
                     "transition-all duration-200",
-                    selectedGoal === goal.id ? "opacity-100" : "opacity-80 hover:opacity-100"
+                    selectedGoal === goal.id ? "opacity-100" : 
+                    hasContribution ? "opacity-100" : "opacity-30"
                   )}
                 />
+                
+                {/* Add a lock icon for goals without contributions */}
+                {!hasContribution && (
+                  <g>
+                    <circle 
+                      cx={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      cy={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      r="12"
+                      fill="white"
+                      opacity="0.8"
+                    />
+                    <text
+                      x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="#666"
+                      fontSize="10"
+                      className="select-none pointer-events-none"
+                    >
+                      🔒
+                    </text>
+                  </g>
+                )}
+                
+                {/* Add a check icon for goals with contributions */}
+                {hasContribution && (
+                  <circle 
+                    cx={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                    cy={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180)) - 15}
+                    r="8"
+                    fill="white"
+                    stroke={goal.color}
+                    strokeWidth="1"
+                    className="animate-pulse"
+                  />
+                )}
+                
                 <text
                   x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
                   y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
@@ -508,6 +359,22 @@ export default function SdgCircle() {
                 >
                   {goal.id}
                 </text>
+                
+                {/* Add contribution count for goals with contributions */}
+                {hasContribution && (
+                  <text
+                    x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                    y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180)) - 15}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={goal.color}
+                    fontSize="8"
+                    fontWeight="bold"
+                    className="select-none pointer-events-none"
+                  >
+                    ✓
+                  </text>
+                )}
               </g>
             )
           })}
@@ -516,7 +383,7 @@ export default function SdgCircle() {
           <circle cx={centerX} cy={centerY} r={innerRadius - 2} fill="white" stroke="#ddd" strokeWidth="1" />
           <text
             x={centerX}
-            y={centerY}
+            y={centerY - 8}
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize="14"
@@ -524,6 +391,16 @@ export default function SdgCircle() {
             fill="#333"
           >
             SDGs
+          </text>
+          <text
+            x={centerX}
+            y={centerY + 12}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="10"
+            fill="#666"
+          >
+            {contributedSdgs.length} contributions
           </text>
         </svg>
       </div>
@@ -545,32 +422,125 @@ export default function SdgCircle() {
             <h2 className="text-xl font-bold text-white ml-2">
               Goal {selectedGoal}: {sdgGoals[selectedGoal - 1].name}
             </h2>
+            
+            <a 
+              href={sdgGoals[selectedGoal - 1].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto flex items-center gap-1 text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="hidden sm:inline">View on UN Site</span>
+            </a>
           </div>
 
           <div className="bg-gray-50 rounded-b-lg border border-t-0 border-gray-200">
-            <div className="grid gap-3 p-4">
-              {sdgGoals[selectedGoal - 1].targets.map((target) => (
-                <a
+            <div className="p-4">
+              <h3 className="text-lg font-medium mb-3">Researcher&apos;s Contributions to This Goal</h3>
+              
+              <div className="grid gap-3">
+                {getContributedTargets(selectedGoal).length > 0 ? (
+                  getContributedTargets(selectedGoal).map((target) => {
+                    return (
+                      <div
                   key={target.id}
-                  href={target.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                        className="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 transition-shadow hover:shadow-md"
                 >
+                        <div className="flex flex-col gap-4">
+                          {/* Target header with badge */}
                   <div className="flex items-start gap-3">
                     <div
-                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                              className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
                       style={{ backgroundColor: sdgGoals[selectedGoal - 1].color }}
                     >
                       {target.id}
                     </div>
-                    <div>
-                      <h3 className="font-medium">{target.name}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">Click to learn more about this target</p>
+                            <div className="flex-1">
+                              <h3 className="font-medium text-lg">{target.name}</h3>
+                              
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <Badge 
+                                  variant={target.impactType === 'positive' ? 'default' : 'destructive'}
+                                  className="rounded-md"
+                                >
+                                  {target.impactType === 'positive' ? 'Positive Impact' : 'Negative Impact'}
+                                </Badge>
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "rounded-md",
+                                    target.impactDirection === 'direct' 
+                                      ? "border-primary text-primary" 
+                                      : "border-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {target.impactDirection === 'direct' ? 'Direct' : 'Indirect'} Impact
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Evidence section if available */}
+                          {!showSearchLink && target.evidence && (
+                            <div className="text-sm text-muted-foreground bg-slate-50 p-3 rounded border border-slate-200">
+                              <span className="font-medium text-xs text-slate-500 block mb-1">Evidence:</span>
+                              {target.evidence}
+                            </div>
+                          )}
+                          
+                          {/* Action buttons */}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {showSearchLink && (
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="h-9"
+                                onClick={() => router.push(`/search?targetId=${target.id}`)}
+                              >
+                                <Search className="mr-2 h-4 w-4" />
+                                Find researchers working on this target
+                              </Button>
+                            )}
+                            
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-9"
+                              asChild
+                            >
+                              <a 
+                                href={target.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Globe className="mr-2 h-4 w-4" />
+                                View on UN SDG site
+                              </a>
+                            </Button>
+                            
+                            {!showSearchLink && (
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="h-9"
+                                onClick={() => onTargetClick && onTargetClick(target.id)}
+                              >
+                                <Target className="mr-2 h-4 w-4" />
+                                View impact details
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                     </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No specific target contributions found for this goal.</p>
                   </div>
-                </a>
-              ))}
+                )}
+              </div>
             </div>
           </div>
         </div>

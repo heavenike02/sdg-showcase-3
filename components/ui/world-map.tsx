@@ -63,7 +63,7 @@ export function WorldMap({
 
   // Calculate a custom delay for each line based on its position
   // This creates a more natural, non-uniform flow pattern
-  const getCustomDelay = (index: number, total: number) => {
+  const getCustomDelay = (index: number) => {
     // Base delay pattern using prime number spacing to avoid synchronization
     const baseDelays = [0, 1.1, 2.3, 0.7, 1.9, 1.3];
     
@@ -92,7 +92,7 @@ export function WorldMap({
         {dots.map((dot, i) => {
           const startPoint = projectPoint(dot.start.lat, dot.start.lng);
           const endPoint = projectPoint(dot.end.lat, dot.end.lng);
-          const customDelay = getCustomDelay(i, dots.length);
+          const customDelay = getCustomDelay(i);
           
           return (
             <g key={`path-group-${i}`}>

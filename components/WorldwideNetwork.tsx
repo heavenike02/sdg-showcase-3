@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { WorldMap } from './ui/world-map'
-import { Globe } from 'lucide-react'
 
 export const countryCoordinates: Record<string, { lat: number; lng: number; name: string }> = {
   AT: { lat: 47.5162, lng: 14.5501, name: 'Austria' },

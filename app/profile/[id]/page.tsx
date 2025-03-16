@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'    
-import { ArrowLeft, Globe, BookOpen, Users, ExternalLink, Target, Mail, Phone, Building2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, BookOpen, Users, ExternalLink, Target, Mail, AlertCircle, Search, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +13,11 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { getSDGColor } from '@/lib/sdgcolor'
 import { fetchAssessmentById } from '@/queries/fetch-assessment-data'
+import SdgCircle from '@/components/sdg-circle'
+
+
+// Import the SDG goals data
+import { sdgGoals, SdgGoal } from '@/lib/sdg-data'
 
 // Define Assessment type
 interface Assessment {
@@ -24,11 +29,36 @@ interface Assessment {
   university_school: string;
   title: string;
   objectives: string;
-  targets: Record<string, any>; // JSONB in the database
+  targets: Record<string, string[]>; // Map of SDG numbers to target numbers
   tags: string[];
-  modules: Record<string, any>; // JSONB in the database
+  modules: {
+    teaching?: {
+      code: string;
+      title: string;
+      description: string;
+      sdgs?: number[];
+    }[];
+    projects?: {
+      title: string;
+      description: string;
+      year: string;
+      funding: string;
+    }[];
+  };
   publications: string;
-  [key: string]: any;
+  // Add impact assessment fields
+  impact_assessment?: {
+    targetImpacts?: {
+      targetId: string;
+      impactType: 'positive' | 'negative';
+      impactDirection: 'direct' | 'indirect';
+      evidence?: string;
+    }[];
+    insights?: string;
+    recommendedTags?: string[];
+  };
+  profilePicture: string;
+  publicationsOverview: string;
 }
 
 // Publication interface
@@ -60,6 +90,28 @@ interface Teaching {
 interface SdgTarget {
   id: string;
   direct: boolean;
+  impactType?: 'positive' | 'negative';
+  impactDirection?: 'direct' | 'indirect';
+  evidence?: string;
+}
+
+// Target Impact interface
+interface TargetImpact {
+  targetId: string;
+  impactType: 'positive' | 'negative';
+  impactDirection: 'direct' | 'indirect';
+  evidence?: string;
+}
+
+// Define Module interface
+interface Module {
+  moduleCode: string;
+  moduleName: string;
+  moduleDescription: string;
+  sdgAlignments: {
+    sdg: string;
+    alignment: string;
+  }[];
 }
 
 // Type for formatted profile data
@@ -82,14 +134,30 @@ interface FormattedProfile {
   projects: Project[];
   teaching: Teaching[];
   sdgTargets: SdgTarget[];
+  targetImpacts: TargetImpact[];
+  insights: string;
+  recommendedTags: string[];
+  profilePicture: string;
+  tags: string[];
+  publicationsOverview: string;
+  modules: Module[];
+}
+
+interface LocalSdgTarget {
+  id: string;
+  direct: boolean;
+  impactType?: 'positive' | 'negative';
+  impactDirection?: 'direct' | 'indirect';
+  evidence?: string;
 }
 
 export default function ProfilePage() {
   const params = useParams()
-  const router = useRouter()
+
   const [profile, setProfile] = useState<FormattedProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -134,14 +202,22 @@ export default function ProfilePage() {
     const sdgs = Object.keys(targetsMap).map(Number).filter(Boolean)
     const primarySDG = sdgs.length > 0 ? sdgs[0] : 0
 
-    // Format SDG targets
-    const sdgTargets: SdgTarget[] = []
+    // Format SDG targets with impact assessment data if available
+    const sdgTargets: LocalSdgTarget[] = []
+    const targetImpacts = assessment.impact_assessment?.targetImpacts || []
+    
     for (const [sdgKey, targets] of Object.entries(targetsMap)) {
       if (Array.isArray(targets)) {
         for (const target of targets) {
+          const targetId = `${sdgKey}.${target}`
+          const impactData = targetImpacts.find((ti) => ti.targetId === targetId)
+          
           sdgTargets.push({
-            id: `${sdgKey}.${target}`,
-            direct: true
+            id: targetId,
+            direct: impactData?.impactDirection === 'direct' || false,
+            impactType: impactData?.impactType,
+            impactDirection: impactData?.impactDirection,
+            evidence: impactData?.evidence
           })
         }
       }
@@ -157,7 +233,7 @@ export default function ProfilePage() {
           : assessment.publications
         
         if (Array.isArray(pubData)) {
-          pubData.forEach((pub: any) => {
+          pubData.forEach((pub: Publication) => {
             publicationsData.push({
               title: pub.title || 'Untitled Publication',
               journal: pub.journal || 'Journal Unknown',
@@ -184,6 +260,7 @@ export default function ProfilePage() {
     // Extract modules data
     const teaching: Teaching[] = []
     const projects: Project[] = []
+    const modules: Module[] = []
     try {
       if (assessment.modules) {
         const modulesData = typeof assessment.modules === 'string'
@@ -192,7 +269,7 @@ export default function ProfilePage() {
         
         // Extract teaching modules
         if (modulesData.teaching && Array.isArray(modulesData.teaching)) {
-          modulesData.teaching.forEach((course: any) => {
+          modulesData.teaching.forEach((course: Teaching) => {
             teaching.push({
               code: course.code || 'Unknown',
               title: course.title || 'Untitled Course',
@@ -204,7 +281,7 @@ export default function ProfilePage() {
         
         // Extract projects
         if (modulesData.projects && Array.isArray(modulesData.projects)) {
-          modulesData.projects.forEach((project: any) => {
+          modulesData.projects.forEach((project: Project) => {
             projects.push({
               title: project.title || 'Untitled Project',
               description: project.description || '',
@@ -213,10 +290,25 @@ export default function ProfilePage() {
             })
           })
         }
+
+        // Extract new modules
+        if (Array.isArray(modulesData)) {
+          modulesData.forEach((mod: Module) => {
+            modules.push({
+              moduleCode: mod.moduleCode || 'Unknown',
+              moduleName: mod.moduleName || 'Untitled Module',
+              moduleDescription: mod.moduleDescription || '',
+              sdgAlignments: mod.sdgAlignments || []
+            })
+          })
+        }
       }
     } catch (e) {
       console.error('Error parsing modules:', e)
     }
+
+    // Format target impacts for the profile
+    const formattedTargetImpacts: TargetImpact[] = assessment.impact_assessment?.targetImpacts || []
 
     return {
       id: assessment.id,
@@ -229,7 +321,7 @@ export default function ProfilePage() {
       research: interests,
       primarySDG,
       sdgs,
-      image: `https://placehold.co/400x400/${getSDGColor(primarySDG).substring(1)}/FFFFFF/png?text=${assessment.first_name?.[0] || ''}${assessment.last_name?.[0] || ''}`,
+      image: assessment.profilePicture || `https://placehold.co/400x400/${getSDGColor(primarySDG).substring(1)}/FFFFFF/png?text=${assessment.first_name?.[0] || ''}${assessment.last_name?.[0] || ''}`,
       email: assessment.email || '',
       phone: '+353 91 524411', // Default phone
       office: 'Office information not available',
@@ -237,7 +329,25 @@ export default function ProfilePage() {
       projects,
       teaching,
       sdgTargets,
+      // Add impact assessment data
+      targetImpacts: formattedTargetImpacts,
+      insights: assessment.impact_assessment?.insights || '',
+      recommendedTags: assessment.impact_assessment?.recommendedTags || [],
+      profilePicture: assessment.profilePicture || '',
+      tags: assessment.tags || [],
+      publicationsOverview: assessment.publicationsOverview || '',
+      modules
     }
+  }
+
+  // Handle target click in SDG Circle
+  const handleTargetClick = (targetId: string) => {
+    setSelectedTargetId(targetId)
+  }
+
+  // Get target impact details
+  const getTargetImpactDetails = (targetId: string) => {
+    return profile?.targetImpacts?.find(ti => ti.targetId === targetId)
   }
 
   if (loading) {
@@ -307,7 +417,7 @@ export default function ProfilePage() {
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/4">
                   <Avatar className="w-32 h-32 mx-auto md:mx-0">
-                    <AvatarImage src={profile.image} alt={profile.name} />
+                    <AvatarImage src={profile.profilePicture || profile.image} alt={profile.name} />
                     <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -328,31 +438,15 @@ export default function ProfilePage() {
                         <span className="truncate">{profile.email}</span>
                       </a>
                     </Button>
-                    
-                    {profile.phone && (
-                      <Button variant="outline" asChild size="sm" className="justify-start h-9">
-                        <a href={`tel:${profile.phone}`}>
-                          <Phone className="mr-2 h-4 w-4" />
-                          {profile.phone}
-                        </a>
-                      </Button>
-                    )}
-                    
-                    {profile.office && (
-                      <Button variant="outline" size="sm" className="justify-start h-9">
-                        <Building2 className="mr-2 h-4 w-4" />
-                        {profile.office}
-                      </Button>
-                    )}
                   </div>
                   
-                  {profile.research && profile.research.length > 0 && (
+                  {profile.tags && profile.tags.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-medium mb-2">Research Interests</h3>
+                      <h3 className="text-sm font-medium mb-2">Tags</h3>
                       <div className="flex flex-wrap gap-1.5">
-                        {profile.research.map((interest, idx) => (
-                          <Badge key={idx} variant="secondary" className="rounded-md">
-                            {interest}
+                        {profile.tags.map((tag, idx) => (
+                          <Badge key={`tag-${idx}`} variant="secondary" className="rounded-md">
+                            {tag}
                           </Badge>
                         ))}
                       </div>
@@ -378,52 +472,122 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Biography */}
+          {/* SDG Impact Visualization */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Biography</CardTitle>
+              <CardTitle>SDG Impact Visualization</CardTitle>
+              <CardDescription>
+                Explore how this researcher&apos;s work contributes to the UN Sustainable Development Goals
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>
+              <SdgCircle 
+                selectedSdgs={profile.sdgs} 
+                targetImpacts={profile.targetImpacts}
+                onTargetClick={handleTargetClick}
+                recommendedTags={profile.recommendedTags}
+                insights={profile.insights}
+                showSearchLink={false}
+              />
               
-              {profile.sdgTargets && profile.sdgTargets.length > 0 && (
-                <>
-                  <Separator className="my-4" />
-                  <div className="space-y-3">
-                    <h3 className="font-medium">SDG Targets</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile.sdgTargets.map((target, idx) => (
+              {/* Selected target details */}
+              {selectedTargetId && (
+                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      <span className="text-lg">Target {selectedTargetId} Impact Details</span>
+                    </h3>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedTargetId(null)}
+                      className="h-8 w-8 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  
+                  {(() => {
+                    const impact = getTargetImpactDetails(selectedTargetId)
+                    if (!impact) return <p className="text-sm text-muted-foreground">No detailed information available</p>
+                    
+                    // Get SDG number from target ID (e.g., "13.B" -> 13)
+                    const sdgNumber = parseInt(selectedTargetId.split('.')[0])
+                    // Find the target in the SDG goals data
+                    const sdgGoal = sdgGoals.find((goal: SdgGoal) => goal.id === sdgNumber)
+                    const target = sdgGoal?.targets.find((t) => t.id === selectedTargetId)
+                    // Construct the target URL
+                    const targetUrl = target?.url || `https://sdgs.un.org/goals/goal${sdgNumber}`
+                    
+                    return (
+                      <div className="space-y-4">
+                        {/* Target name */}
+                        <div className="bg-white p-4 rounded-lg border border-slate-200">
+                          <h4 className="font-medium text-lg mb-2">{target?.name || `Target ${selectedTargetId}`}</h4>
+                          
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <Badge 
+                              variant={impact.impactType === 'positive' ? 'default' : 'destructive'}
+                              className="rounded-md"
+                            >
+                              {impact.impactType === 'positive' ? 'Positive Impact' : 'Negative Impact'}
+                            </Badge>
                         <Badge
-                          key={idx}
-                          variant={target.direct ? "default" : "secondary"}
-                          className="flex items-center gap-1 rounded-md"
-                        >
-                          <Target className="h-3 w-3" />
-                          {target.id}
-                          {target.direct && (
-                            <span className="ml-1 text-[10px] bg-primary-foreground/10 px-1 rounded">
-                              Direct
-                            </span>
+                              variant="outline"
+                              className={impact.impactDirection === 'direct' ? 'border-primary text-primary' : ''}
+                            >
+                              {impact.impactDirection === 'direct' ? 'Direct' : 'Indirect'} Impact
+                            </Badge>
+                          </div>
+                          
+                          {impact.evidence && (
+                            <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                              <h4 className="text-sm font-medium mb-1">Evidence</h4>
+                              <p className="text-sm text-muted-foreground">{impact.evidence}</p>
+                            </div>
                           )}
-                        </Badge>
-                      ))}
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-3">
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            asChild
+                            className="h-9"
+                          >
+                            <Link href={`/search?targetId=${selectedTargetId}`}>
+                              <Search className="mr-2 h-4 w-4" />
+                              Find researchers working on this target
+                            </Link>
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            asChild
+                            className="h-9"
+                          >
+                            <a href={targetUrl} target="_blank" rel="noopener noreferrer">
+                              <Globe className="mr-2 h-4 w-4" />
+                              View on UN SDG site
+                            </a>
+                          </Button>
                     </div>
                   </div>
-                </>
+                    )
+                  })()}
+                </div>
               )}
             </CardContent>
           </Card>
           
           {/* Tabbed content */}
-          <Tabs defaultValue={profile.publications.length > 0 ? "publications" : profile.projects.length > 0 ? "projects" : "teaching"}>
+          <Tabs defaultValue={profile.publications.length > 0 ? "publications" : profile.teaching.length > 0 ? "teaching" : "publications"}>
             <TabsList className="w-full grid grid-cols-3 h-9">
               <TabsTrigger value="publications" className="text-xs" disabled={profile.publications.length === 0}>
                 <BookOpen className="mr-2 h-3 w-3" />
                 Publications
-              </TabsTrigger>
-              <TabsTrigger value="projects" className="text-xs" disabled={profile.projects.length === 0}>
-                <Globe className="mr-2 h-3 w-3" />
-                Projects
               </TabsTrigger>
               <TabsTrigger value="teaching" className="text-xs" disabled={profile.teaching.length === 0}>
                 <Users className="mr-2 h-3 w-3" />
@@ -437,6 +601,11 @@ export default function ProfilePage() {
                 <CardHeader className="pb-3">
                   <CardTitle>Publications</CardTitle>
                 </CardHeader>
+                {profile.publicationsOverview && (
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{profile.publicationsOverview}</p>
+                  </CardContent>
+                )}
                 {profile.publications.length > 0 ? (
                   <CardContent className="space-y-4">
                     {profile.publications.map((pub, index) => (
@@ -477,43 +646,6 @@ export default function ProfilePage() {
                   <CardContent>
                     <p className="text-sm text-muted-foreground text-center py-8">
                       No publications available for this researcher.
-                    </p>
-                  </CardContent>
-                )}
-              </Card>
-            </TabsContent>
-            
-            {/* Projects tab */}
-            <TabsContent value="projects" className="mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Current Projects</CardTitle>
-                </CardHeader>
-                {profile.projects.length > 0 ? (
-                  <CardContent className="space-y-4">
-                    {profile.projects.map((project, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-1">
-                          <h4 className="font-medium text-sm">{project.title}</h4>
-                          <div className="text-xs whitespace-nowrap">
-                            <span className="text-muted-foreground">{project.year}</span>
-                            <span className="mx-2">•</span>
-                            <span className="text-emerald-600 font-medium">{project.funding}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {project.description}
-                        </p>
-                        {index < profile.projects.length - 1 && (
-                          <Separator className="my-3" />
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                ) : (
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No current projects available for this researcher.
                     </p>
                   </CardContent>
                 )}

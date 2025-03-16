@@ -1,7 +1,10 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search as SearchIcon, Globe, Users, AlertCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Search as SearchIcon, Globe, Users, AlertCircle, Target } from "lucide-react";
+import { Suspense } from "react";
+import { SkeletonDemo } from '@/components/SkeletonDemo';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSDGColor } from "@/lib/sdgcolor";
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { searchAssessments, SearchParams } from "@/queries/fetch-assessment-data";
 
 // Define Assessment type based on database schema
@@ -21,46 +25,80 @@ interface Assessment {
   university_school: string;
   title: string;
   objectives: string;
-  targets: Record<string, any>; // JSONB in the database
+  targets: Record<string, string[]>;
   tags: string[];
-  modules: Record<string, any>; // JSONB in the database
+  modules: {
+    teaching?: {
+      code: string;
+      title: string;
+      description: string;
+      sdgs?: number[];
+    }[];
+    projects?: {
+      title: string;
+      description: string;
+      year: string;
+      funding: string;
+    }[];
+  };
   publications: string;
-  [key: string]: any; // Add index signature for other unknown properties
+  // Add impact assessment fields
+  impact_assessment?: {
+    targetImpacts?: {
+      targetId: string;
+      impactType: 'positive' | 'negative';
+      impactDirection: 'direct' | 'indirect';
+      evidence?: string;
+    }[];
+    insights?: string;
+    recommendedTags?: string[];
+  };
 }
 
 const Search = () => {
+  const searchParams = useSearchParams();
+  
+  // Get target parameters from URL
+  const targetId = searchParams.get('targetId');
+  const sdgNumber = targetId ? parseInt(targetId.split('.')[0]) : null;
+  
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [results, setResults] = useState<Assessment[]>([]);
+  const [activeFilter, setActiveFilter] = useState(
+    sdgNumber === 14 ? "marine" : 
+    sdgNumber === 13 ? "climate" : 
+    (sdgNumber === 8 || sdgNumber === 12) ? "economic" : 
+    "all"
+  );
+
+  const [filteredResults, setFilteredResults] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Function to get primary SDG from targets
-  const getPrimarySDG = (targets: Record<string, any> | null): number => {
+  const getPrimarySDG = useCallback((targets: Record<string, string[]> | null): number => {
     if (!targets || typeof targets !== 'object') {
       return 0;
     }
     
-    // Try to find the primary SDG - this logic depends on how targets are stored
     const targetKeys = Object.keys(targets);
     return targetKeys.length > 0 ? parseInt(targetKeys[0]) : 0;
-  };
+  }, []);
 
-  // Format interests from objectives text
-  const getInterests = (objectives: string): string[] => {
-    if (!objectives) return [];
+ 
+
+  // Check if an assessment has a specific target
+  const hasTarget = useCallback((assessment: Assessment, targetId: string): boolean => {
+    if (!targetId || !assessment.targets) return false;
     
-    // Simple split by comma or period for now
-    // In a real app, this might need more sophisticated parsing
-    return objectives
-      .split(/[,.;]+/)
-      .map(item => item.trim())
-      .filter(item => item.length > 0)
-      .slice(0, 5); // Limit to 5 interests
-  };
+    const [sdgStr, targetStr] = targetId.split('.');
+    if (!sdgStr || !targetStr) return false;
+    
+    const sdgTargets = assessment.targets[sdgStr];
+    return Array.isArray(sdgTargets) && sdgTargets.includes(targetStr);
+  }, []);
 
   // Fetch data function
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -71,19 +109,29 @@ const Search = () => {
       };
       
       const data = await searchAssessments(searchParams);
-      setResults(data as Assessment[]);
+     
+      
+      // Filter by target if targetId is provided
+      if (targetId) {
+        const filtered = (data as Assessment[]).filter(assessment => 
+          hasTarget(assessment, targetId)
+        );
+        setFilteredResults(filtered);
+      } else {
+        setFilteredResults(data as Assessment[]);
+      }
     } catch (err) {
       console.error("Error fetching search results:", err);
       setError("Failed to load search results. Please try again later.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [query, activeFilter, targetId, hasTarget]);
 
   // Initial data load
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
@@ -92,13 +140,19 @@ const Search = () => {
   };
 
   // Handle filter change
-  useEffect(() => {
-    fetchData();
-  }, [activeFilter]);
+  const handleFilterChange = (value: string) => {
+    setActiveFilter(value);
+  };
+
+  // Clear target filter
+  const clearTargetFilter = () => {
+    // Use window.location to navigate without the targetId parameter
+    window.location.href = '/search';
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="page-container py-12">
+      <div className="container py-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col space-y-3 mb-8">
             <div className="flex items-center gap-2">
@@ -121,6 +175,27 @@ const Search = () => {
 
           <Card className="mb-8">
             <CardContent className="pt-6">
+              {targetId && (
+                <div className="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      <span className="font-medium">Filtering by SDG Target: </span>
+                      <Badge className="rounded-md">
+                        {targetId}
+                      </Badge>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={clearTargetFilter}
+                    >
+                      Clear Filter
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-6">
                 <Input
                   type="search"
@@ -148,7 +223,7 @@ const Search = () => {
                 </Button>
               </form>
 
-              <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
+              <Tabs value={activeFilter} onValueChange={handleFilterChange} className="w-full">
                 <TabsList className="w-full md:w-auto grid grid-cols-2 md:grid-cols-4 gap-2">
                   <TabsTrigger value="all" className="data-[state=active]:bg-slate-100">
                     All Areas
@@ -180,10 +255,10 @@ const Search = () => {
                   </div>
                 </CardContent>
               </Card>
-            ) : results.length > 0 ? (
-              results.map((result) => {
+            ) : filteredResults.length > 0 ? (
+              filteredResults.map((result) => {
                 const primarySDG = getPrimarySDG(result.targets);
-                const interests = getInterests(result.objectives);
+               
                 
                 return (
                   <Card key={result.id} className="transition-all hover:shadow-sm">
@@ -216,15 +291,12 @@ const Search = () => {
                             </Button>
                           </div>
                           
-                          {interests.length > 0 && (
+                          {result.tags && result.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-4">
-                              {interests.map((interest, idx) => (
-                                <span
-                                  key={idx}
-                                  className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm"
-                                >
-                                  {interest}
-                                </span>
+                              {result.tags.map((tag, idx) => (
+                                <Badge key={idx} variant="secondary" className="rounded-md">
+                                  {tag}
+                                </Badge>
                               ))}
                             </div>
                           )}
@@ -240,6 +312,16 @@ const Search = () => {
                               </span>
                             </div>
                           )}
+                          
+                          {/* Show matching target if filtering by target */}
+                          {targetId && hasTarget(result, targetId) && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <Badge variant="outline" className="flex items-center gap-1 rounded-md border-primary/30 bg-primary/5">
+                                <Target className="h-3 w-3" />
+                                Target {targetId}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -250,7 +332,11 @@ const Search = () => {
               <Card className="text-center">
                 <CardContent className="py-6">
                   <p className="text-slate-600 mb-2">No results found for your search criteria.</p>
-                  <p className="text-slate-500 text-sm">Try adjusting your search terms or filters.</p>
+                  <p className="text-slate-500 text-sm">
+                    {targetId 
+                      ? "No researchers found working on this specific SDG target. Try another target or clear the filter."
+                      : "Try adjusting your search terms or filters."}
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -261,4 +347,10 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default function SearchWrapper() {
+  return (
+    <Suspense fallback={<SkeletonDemo />}>
+      <Search />
+    </Suspense>
+  );
+}
