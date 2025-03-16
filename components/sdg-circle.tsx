@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+
 import { cn } from "@/lib/utils"
-import { ChevronLeft, Target,   Info, Search, Globe, Lock,  } from "lucide-react"
+import { ChevronLeft, Info, Search, Lock, Globe } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { sdgGoals, SdgTarget } from "@/lib/sdg-data"
+import Link from "next/link"
 
 // Helper function to round numbers to 4 decimal places
 const round = (num: number) => Number(num.toFixed(4))
@@ -28,7 +29,6 @@ interface SdgCircleProps {
     impactDirection: 'direct' | 'indirect'
     evidence?: string
   }[]
-  onTargetClick?: (targetId: string) => void
   recommendedTags?: string[]
   insights?: string
   showSearchLink?: boolean
@@ -37,12 +37,11 @@ interface SdgCircleProps {
 export default function SdgCircle({ 
   
   targetImpacts = [],
-  onTargetClick,
   recommendedTags = [],
   insights = "",
   showSearchLink = true
 }: SdgCircleProps) {
-  const router = useRouter()
+ 
   const [hoveredGoal, setHoveredGoal] = useState<number | null>(null)
   const [selectedGoal, setSelectedGoal] = useState<number | null>(null)
 
@@ -140,9 +139,25 @@ export default function SdgCircle({
 
       {/* Contribution summary */}
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Target className="h-5 w-5 text-primary" />
-              <h3 className="font-medium">Researcher&apos;s SDG Contributions</h3>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-primary" />
+            <h3 className="font-medium">Researcher&apos;s SDG Contributions</h3>
+          </div>
+          
+          {showSearchLink && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-xs"
+              asChild
+            >
+              <Link href="/search">
+                <Search className="h-3.5 w-3.5 mr-1" />
+                Find other researchers
+              </Link>
+            </Button>
+          )}
         </div>
         
         <div className="flex flex-wrap gap-3">
@@ -309,8 +324,8 @@ export default function SdgCircle({
                   )}
                 />
                 
-                {/* Add a lock icon for goals without contributions */}
-                {!hasContribution && (
+                {/* Show either lock icon for goals without contributions or goal number for goals with contributions */}
+                {!hasContribution ? (
                   <g>
                     <circle 
                       cx={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
@@ -331,49 +346,31 @@ export default function SdgCircle({
                       🔒
                     </text>
                   </g>
-                )}
-                
-                {/* Add a check icon for goals with contributions */}
-                {hasContribution && (
-                  <circle 
-                    cx={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
-                    cy={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180)) - 15}
-                    r="8"
-                    fill="white"
-                    stroke={goal.color}
-                    strokeWidth="1"
-                    className="animate-pulse"
-                  />
-                )}
-                
-                <text
-                  x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
-                  y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="white"
-                  fontSize="14"
-                  fontWeight="bold"
-                  className="select-none pointer-events-none"
-                  style={{ textShadow: "0px 0px 3px rgba(0,0,0,0.5)" }}
-                >
-                  {goal.id}
-                </text>
-                
-                {/* Add contribution count for goals with contributions */}
-                {hasContribution && (
-                  <text
-                    x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
-                    y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180)) - 15}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill={goal.color}
-                    fontSize="8"
-                    fontWeight="bold"
-                    className="select-none pointer-events-none"
-                  >
-                    ✓
-                  </text>
+                ) : (
+                  <>
+                    {/* White circle with goal number for goals with contributions */}
+                    <circle 
+                      cx={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      cy={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      r="12"
+                      fill="white"
+                      stroke={goal.color}
+                      strokeWidth="1"
+                      className="animate-pulse duration-[3000ms]"
+                    />
+                    <text
+                      x={round(250 + 160 * Math.cos(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      y={round(250 + 160 * Math.sin(((angle + nextAngle) / 2 * Math.PI) / 180))}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={goal.color}
+                      fontSize="10"
+                      fontWeight="bold"
+                      className="select-none pointer-events-none"
+                    >
+                      {goal.id}
+                    </text>
+                  </>
                 )}
               </g>
             )
@@ -488,49 +485,18 @@ export default function SdgCircle({
                             </div>
                           )}
                           
-                          {/* Action buttons */}
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {showSearchLink && (
-                              <Button 
-                                variant="default" 
-                                size="sm" 
-                                className="h-9"
-                                onClick={() => router.push(`/search?targetId=${target.id}`)}
-                              >
-                                <Search className="mr-2 h-4 w-4" />
-                                Find researchers working on this target
-                              </Button>
-                            )}
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-9"
-                              asChild
-                            >
-                              <a 
-                                href={target.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Globe className="mr-2 h-4 w-4" />
-                                View on UN SDG site
-                              </a>
-                            </Button>
-                            
-                            {!showSearchLink && (
-                              <Button 
-                                variant="default" 
-                                size="sm" 
-                                className="h-9"
-                                onClick={() => onTargetClick && onTargetClick(target.id)}
-                              >
-                                <Target className="mr-2 h-4 w-4" />
-                                View impact details
-                              </Button>
-                            )}
-                          </div>
+                          {/* Find researchers button */}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9"
+                            asChild
+                          >
+                            <Link href={`/search?targetId=${target.id}`}>
+                              <Search className="mr-2 h-4 w-4" />
+                              Find researchers working on this target
+                            </Link>
+                          </Button>
                         </div>
                     </div>
                     )

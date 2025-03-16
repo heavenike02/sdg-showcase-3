@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Search as SearchIcon, Globe, Users, AlertCircle, Target } from "lucide-react";
 import { Suspense } from "react";
@@ -25,7 +26,13 @@ interface Assessment {
   university_school: string;
   title: string;
   objectives: string;
-  targets: Record<string, string[]>;
+  profile_picture?: string; // Add profile picture field
+  targets: Array<{
+    targetId: string;
+    impactType?: 'positive' | 'negative';
+    impactDirection?: 'direct' | 'indirect';
+    evidence?: string;
+  }> | Record<string, string[]>; // Support both formats
   tags: string[];
   modules: {
     teaching?: {
@@ -75,21 +82,43 @@ const Search = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Function to get primary SDG from targets
-  const getPrimarySDG = useCallback((targets: Record<string, string[]> | null): number => {
-    if (!targets || typeof targets !== 'object') {
+  const getPrimarySDG = useCallback((targets: Assessment['targets'] | null): number => {
+    if (!targets) return 0;
+    
+    // Handle targets as an array of objects with targetId property
+    if (Array.isArray(targets) && targets.length > 0) {
+      const firstTarget = targets[0];
+      if (typeof firstTarget === 'object' && 'targetId' in firstTarget) {
+        const sdgStr = firstTarget.targetId.split('.')[0];
+        return sdgStr ? parseInt(sdgStr) : 0;
+      }
       return 0;
     }
     
-    const targetKeys = Object.keys(targets);
-    return targetKeys.length > 0 ? parseInt(targetKeys[0]) : 0;
+    // Handle legacy format where targets are a Record<string, string[]>
+    if (typeof targets === 'object') {
+      const targetKeys = Object.keys(targets);
+      return targetKeys.length > 0 ? parseInt(targetKeys[0]) : 0;
+    }
+    
+    return 0;
   }, []);
-
- 
 
   // Check if an assessment has a specific target
   const hasTarget = useCallback((assessment: Assessment, targetId: string): boolean => {
     if (!targetId || !assessment.targets) return false;
     
+    // Handle targets as an array of objects with targetId property
+    if (Array.isArray(assessment.targets)) {
+      return assessment.targets.some(target => {
+        if (typeof target === 'object' && target && 'targetId' in target) {
+          return target.targetId === targetId;
+        }
+        return false;
+      });
+    }
+    
+    // Handle legacy format where targets are a Record<string, string[]>
     const [sdgStr, targetStr] = targetId.split('.');
     if (!sdgStr || !targetStr) return false;
     
@@ -105,28 +134,19 @@ const Search = () => {
     try {
       const searchParams: SearchParams = {
         query,
-        filter: activeFilter as 'all' | 'marine' | 'climate' | 'economic'
+        filter: activeFilter as 'all' | 'marine' | 'climate' | 'economic',
+        targetId: targetId || undefined
       };
       
       const data = await searchAssessments(searchParams);
-     
-      
-      // Filter by target if targetId is provided
-      if (targetId) {
-        const filtered = (data as Assessment[]).filter(assessment => 
-          hasTarget(assessment, targetId)
-        );
-        setFilteredResults(filtered);
-      } else {
-        setFilteredResults(data as Assessment[]);
-      }
+      setFilteredResults(data as Assessment[]);
     } catch (err) {
       console.error("Error fetching search results:", err);
       setError("Failed to load search results. Please try again later.");
     } finally {
       setLoading(false);
     }
-  }, [query, activeFilter, targetId, hasTarget]);
+  }, [query, activeFilter, targetId]);
 
   // Initial data load
   useEffect(() => {
@@ -265,12 +285,29 @@ const Search = () => {
                     <CardContent className="py-6">
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
-                          <div 
-                            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-semibold text-white"
-                            style={{ backgroundColor: getSDGColor(primarySDG) }}
-                          >
-                            {`${result.first_name?.[0] || ''}${result.last_name?.[0] || ''}`}
-                          </div>
+                          {result.profile_picture ? (
+                            <Image 
+                              src={result.profile_picture} 
+                              alt={`${result.first_name} ${result.last_name}`}
+                              width={56}
+                              height={56}
+                              className="w-14 h-14 rounded-full object-cover"
+                              onError={() => {
+                                // If image fails to load, we'll fall back to the initials
+                                // This is handled by the conditional rendering
+                                if (result.profile_picture) {
+                                  result.profile_picture = undefined;
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div 
+                              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-semibold text-white"
+                              style={{ backgroundColor: getSDGColor(primarySDG) }}
+                            >
+                              {`${result.first_name?.[0] || ''}${result.last_name?.[0] || ''}`}
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -279,7 +316,10 @@ const Search = () => {
                                 {result.first_name} {result.last_name}
                               </CardTitle>
                               <CardDescription className="text-muted-foreground">
-                                {result.title} • {result.university_school || result.university}
+                                {result.title}
+                              </CardDescription>
+                              <CardDescription className="text-muted-foreground">
+                                {result.university_school ? `${result.university_school}, ` : ''}{result.university}
                               </CardDescription>
                             </div>
                             <Button 
@@ -290,7 +330,7 @@ const Search = () => {
                               <Link href={`/profile/${result.id}`}>View Profile</Link>
                             </Button>
                           </div>
-                          
+
                           {result.tags && result.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-4">
                               {result.tags.map((tag, idx) => (
@@ -300,7 +340,7 @@ const Search = () => {
                               ))}
                             </div>
                           )}
-                          
+
                           {primarySDG > 0 && (
                             <div className="flex items-center gap-2 mt-4">
                               <span className="text-sm text-muted-foreground">Primary SDG:</span>
@@ -312,7 +352,7 @@ const Search = () => {
                               </span>
                             </div>
                           )}
-                          
+
                           {/* Show matching target if filtering by target */}
                           {targetId && hasTarget(result, targetId) && (
                             <div className="mt-3 flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'    
-import { ArrowLeft, BookOpen, Users, ExternalLink, Target, Mail, AlertCircle, Search, Globe } from 'lucide-react'
+import { ArrowLeft, BookOpen, Users, ExternalLink, Mail, AlertCircle,   } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,8 +16,7 @@ import { fetchAssessmentById } from '@/queries/fetch-assessment-data'
 import SdgCircle from '@/components/sdg-circle'
 
 
-// Import the SDG goals data
-import { sdgGoals, SdgGoal } from '@/lib/sdg-data'
+
 
 // Define Assessment type
 interface Assessment {
@@ -29,7 +28,7 @@ interface Assessment {
   university_school: string;
   title: string;
   objectives: string;
-  targets: Record<string, string[]>; // Map of SDG numbers to target numbers
+  targets: Record<string, string[]> | TargetImpact[]; // Can be either a map or an array of impacts
   tags: string[];
   modules: {
     teaching?: {
@@ -57,17 +56,24 @@ interface Assessment {
     insights?: string;
     recommendedTags?: string[];
   };
-  profilePicture: string;
+  profile_picture?: string;
   publicationsOverview: string;
 }
 
 // Publication interface
 interface Publication {
-  title: string;
-  journal: string;
-  year: number;
+  name: string;
+  author: string;
   link: string;
-  sdgs?: number[];
+  sdg: string;
+}
+
+// Add new interface for raw publication data
+interface PublicationData {
+  name?: string;
+  author?: string;
+  link?: string;
+  sdg?: string;
 }
 
 // Project interface
@@ -157,7 +163,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<FormattedProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -199,29 +204,58 @@ export default function ProfilePage() {
   function formatProfileData(assessment: Assessment): FormattedProfile {
     // Extract SDG targets from JSON
     const targetsMap = assessment.targets || {}
-    const sdgs = Object.keys(targetsMap).map(Number).filter(Boolean)
-    const primarySDG = sdgs.length > 0 ? sdgs[0] : 0
-
-    // Format SDG targets with impact assessment data if available
-    const sdgTargets: LocalSdgTarget[] = []
-    const targetImpacts = assessment.impact_assessment?.targetImpacts || []
     
-    for (const [sdgKey, targets] of Object.entries(targetsMap)) {
-      if (Array.isArray(targets)) {
-        for (const target of targets) {
-          const targetId = `${sdgKey}.${target}`
-          const impactData = targetImpacts.find((ti) => ti.targetId === targetId)
-          
-          sdgTargets.push({
-            id: targetId,
-            direct: impactData?.impactDirection === 'direct' || false,
-            impactType: impactData?.impactType,
-            impactDirection: impactData?.impactDirection,
-            evidence: impactData?.evidence
-          })
+    // Check if targets is an array (new format) or object (old format)
+    let sdgs: number[] = []
+    let sdgTargets: LocalSdgTarget[] = []
+    let targetImpacts: TargetImpact[] = []
+    
+    // Handle the case where targets is an array of impact objects
+    if (Array.isArray(assessment.targets)) {
+      // This is the new format where targets contains the impact data directly
+      targetImpacts = assessment.targets as TargetImpact[]
+      
+      // Extract SDG numbers from targetIds (e.g., "3.8" -> 3)
+      sdgs = Array.from(new Set(
+        targetImpacts.map(impact => parseInt(impact.targetId.split('.')[0]))
+      )).filter(Boolean).sort((a, b) => a - b)
+      
+      // Create sdgTargets from the impact data
+      sdgTargets = targetImpacts.map(impact => ({
+        id: impact.targetId,
+        direct: impact.impactDirection === 'direct',
+        impactType: impact.impactType,
+        impactDirection: impact.impactDirection,
+        evidence: impact.evidence
+      }))
+    } else {
+      // Original format where targets is a map of SDG numbers to target numbers
+      sdgs = Object.keys(targetsMap).map(Number).filter(Boolean)
+      
+      // Format SDG targets with impact assessment data if available
+      const originalTargetImpacts = assessment.impact_assessment?.targetImpacts || []
+      
+      for (const [sdgKey, targets] of Object.entries(targetsMap)) {
+        if (Array.isArray(targets)) {
+          for (const target of targets) {
+            const targetId = `${sdgKey}.${target}`
+            const impactData = originalTargetImpacts.find((ti) => ti.targetId === targetId)
+            
+            sdgTargets.push({
+              id: targetId,
+              direct: impactData?.impactDirection === 'direct' || false,
+              impactType: impactData?.impactType,
+              impactDirection: impactData?.impactDirection,
+              evidence: impactData?.evidence
+            })
+          }
         }
       }
+      
+      targetImpacts = originalTargetImpacts
     }
+    
+    const primarySDG = sdgs.length > 0 ? sdgs[0] : 0
 
     // Parse publications if available
     const publicationsData: Publication[] = []
@@ -233,13 +267,19 @@ export default function ProfilePage() {
           : assessment.publications
         
         if (Array.isArray(pubData)) {
-          pubData.forEach((pub: Publication) => {
+          pubData.forEach((pub: PublicationData) => {
+            // Process author field - split by "-" if present
+            let authorDisplay = pub.author || 'Author Unknown';
+            if (authorDisplay.includes('-')) {
+              // Format authors separated by "-" into a readable format
+              authorDisplay = authorDisplay.split('-').map((author: string) => author.trim()).join(', ');
+            }
+            
             publicationsData.push({
-              title: pub.title || 'Untitled Publication',
-              journal: pub.journal || 'Journal Unknown',
-              year: pub.year || new Date().getFullYear(),
+              name: pub.name || 'Untitled Publication',
+              author: authorDisplay,
               link: pub.link || '#',
-              sdgs: pub.sdgs || [primarySDG]
+              sdg: pub.sdg || primarySDG.toString()
             })
           })
         }
@@ -307,8 +347,24 @@ export default function ProfilePage() {
       console.error('Error parsing modules:', e)
     }
 
-    // Format target impacts for the profile
-    const formattedTargetImpacts: TargetImpact[] = assessment.impact_assessment?.targetImpacts || []
+    // Create a placeholder image URL with initials
+    const placeholderImage = `https://placehold.co/400x400/${getSDGColor(primarySDG).substring(1)}/FFFFFF/png?text=${assessment.first_name?.[0] || ''}${assessment.last_name?.[0] || ''}`;
+    
+    // Extract publications overview
+    let publicationsOverview = '';
+    try {
+      if (assessment.publicationsOverview) {
+        publicationsOverview = typeof assessment.publicationsOverview === 'string'
+          ? assessment.publicationsOverview
+          : JSON.stringify(assessment.publicationsOverview);
+        
+        console.log('Publications Overview:', publicationsOverview);
+      } else {
+        console.log('No publications overview found in assessment data');
+      }
+    } catch (e) {
+      console.error('Error parsing publications overview:', e);
+    }
 
     return {
       id: assessment.id,
@@ -321,7 +377,7 @@ export default function ProfilePage() {
       research: interests,
       primarySDG,
       sdgs,
-      image: assessment.profilePicture || `https://placehold.co/400x400/${getSDGColor(primarySDG).substring(1)}/FFFFFF/png?text=${assessment.first_name?.[0] || ''}${assessment.last_name?.[0] || ''}`,
+      image: placeholderImage,
       email: assessment.email || '',
       phone: '+353 91 524411', // Default phone
       office: 'Office information not available',
@@ -329,26 +385,27 @@ export default function ProfilePage() {
       projects,
       teaching,
       sdgTargets,
-      // Add impact assessment data
-      targetImpacts: formattedTargetImpacts,
+      // Use the target impacts we extracted
+      targetImpacts: targetImpacts,
       insights: assessment.impact_assessment?.insights || '',
       recommendedTags: assessment.impact_assessment?.recommendedTags || [],
-      profilePicture: assessment.profilePicture || '',
+      profilePicture: assessment.profile_picture || '',
       tags: assessment.tags || [],
-      publicationsOverview: assessment.publicationsOverview || '',
+      publicationsOverview: publicationsOverview,
       modules
     }
   }
 
-  // Handle target click in SDG Circle
-  const handleTargetClick = (targetId: string) => {
-    setSelectedTargetId(targetId)
-  }
-
-  // Get target impact details
-  const getTargetImpactDetails = (targetId: string) => {
-    return profile?.targetImpacts?.find(ti => ti.targetId === targetId)
-  }
+  // Add debug log for profile data
+  useEffect(() => {
+    if (profile) {
+      console.log('Profile Data:', {
+        name: profile.name,
+        publicationsOverview: profile.publicationsOverview,
+        publicationsCount: profile.publications.length
+      });
+    }
+  }, [profile]);
 
   if (loading) {
     return (
@@ -417,8 +474,30 @@ export default function ProfilePage() {
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/4">
                   <Avatar className="w-32 h-32 mx-auto md:mx-0">
-                    <AvatarImage src={profile.profilePicture || profile.image} alt={profile.name} />
-                    <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    {profile.profilePicture ? (
+                      <AvatarImage 
+                        src={profile.profilePicture} 
+                        alt={profile.name} 
+                        onError={(e) => {
+                          // If image fails to load, we'll fall back to the AvatarFallback
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <AvatarImage 
+                        src={profile.image} 
+                        alt={profile.name} 
+                      />
+                    )}
+                    <AvatarFallback 
+                      style={{ 
+                        backgroundColor: getSDGColor(profile.primarySDG),
+                        color: 'white'
+                      }}
+                    >
+                      {profile.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
                   </Avatar>
                 </div>
                 
@@ -484,101 +563,10 @@ export default function ProfilePage() {
               <SdgCircle 
                 selectedSdgs={profile.sdgs} 
                 targetImpacts={profile.targetImpacts}
-                onTargetClick={handleTargetClick}
                 recommendedTags={profile.recommendedTags}
                 insights={profile.insights}
                 showSearchLink={false}
               />
-              
-              {/* Selected target details */}
-              {selectedTargetId && (
-                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Target className="h-5 w-5 text-primary" />
-                      <span className="text-lg">Target {selectedTargetId} Impact Details</span>
-                    </h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setSelectedTargetId(null)}
-                      className="h-8 w-8 p-0"
-                    >
-                      ×
-                    </Button>
-                  </div>
-                  
-                  {(() => {
-                    const impact = getTargetImpactDetails(selectedTargetId)
-                    if (!impact) return <p className="text-sm text-muted-foreground">No detailed information available</p>
-                    
-                    // Get SDG number from target ID (e.g., "13.B" -> 13)
-                    const sdgNumber = parseInt(selectedTargetId.split('.')[0])
-                    // Find the target in the SDG goals data
-                    const sdgGoal = sdgGoals.find((goal: SdgGoal) => goal.id === sdgNumber)
-                    const target = sdgGoal?.targets.find((t) => t.id === selectedTargetId)
-                    // Construct the target URL
-                    const targetUrl = target?.url || `https://sdgs.un.org/goals/goal${sdgNumber}`
-                    
-                    return (
-                      <div className="space-y-4">
-                        {/* Target name */}
-                        <div className="bg-white p-4 rounded-lg border border-slate-200">
-                          <h4 className="font-medium text-lg mb-2">{target?.name || `Target ${selectedTargetId}`}</h4>
-                          
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <Badge 
-                              variant={impact.impactType === 'positive' ? 'default' : 'destructive'}
-                              className="rounded-md"
-                            >
-                              {impact.impactType === 'positive' ? 'Positive Impact' : 'Negative Impact'}
-                            </Badge>
-                        <Badge
-                              variant="outline"
-                              className={impact.impactDirection === 'direct' ? 'border-primary text-primary' : ''}
-                            >
-                              {impact.impactDirection === 'direct' ? 'Direct' : 'Indirect'} Impact
-                            </Badge>
-                          </div>
-                          
-                          {impact.evidence && (
-                            <div className="bg-slate-50 p-3 rounded border border-slate-200">
-                              <h4 className="text-sm font-medium mb-1">Evidence</h4>
-                              <p className="text-sm text-muted-foreground">{impact.evidence}</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-3">
-                          <Button 
-                            variant="default" 
-                            size="sm" 
-                            asChild
-                            className="h-9"
-                          >
-                            <Link href={`/search?targetId=${selectedTargetId}`}>
-                              <Search className="mr-2 h-4 w-4" />
-                              Find researchers working on this target
-                            </Link>
-                          </Button>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            asChild
-                            className="h-9"
-                          >
-                            <a href={targetUrl} target="_blank" rel="noopener noreferrer">
-                              <Globe className="mr-2 h-4 w-4" />
-                              View on UN SDG site
-                            </a>
-                          </Button>
-                    </div>
-                  </div>
-                    )
-                  })()}
-                </div>
-              )}
             </CardContent>
           </Card>
           
@@ -600,38 +588,35 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle>Publications</CardTitle>
+                  {profile.publicationsOverview && (
+                    <CardDescription className="mt-2">
+                      {profile.publicationsOverview}
+                    </CardDescription>
+                  )}
                 </CardHeader>
-                {profile.publicationsOverview && (
-                  <CardContent>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{profile.publicationsOverview}</p>
-                  </CardContent>
-                )}
                 {profile.publications.length > 0 ? (
                   <CardContent className="space-y-4">
                     {profile.publications.map((pub, index) => (
                       <div key={index} className="space-y-2">
-                        <h4 className="font-medium text-sm">{pub.title}</h4>
+                        <h4 className="font-medium text-sm">{pub.name}</h4>
                         <p className="text-xs text-muted-foreground">
-                          {pub.journal} • {pub.year}
+                          By: {pub.author}
                         </p>
-                        {pub.sdgs && pub.sdgs.length > 0 && (
+                        {pub.sdg && (
                           <div className="flex flex-wrap items-center gap-1.5">
-                            {pub.sdgs.map(sdg => (
-                              <Badge
-                                key={sdg}
-                                className="text-xs rounded-md"
-                                style={{
-                                  backgroundColor: getSDGColor(sdg),
-                                  color: 'white'
-                                }}
-                              >
-                                SDG {sdg}
-                              </Badge>
-                            ))}
+                            <Badge
+                              className="text-xs rounded-md"
+                              style={{
+                                backgroundColor: getSDGColor(parseInt(pub.sdg)),
+                                color: 'white'
+                              }}
+                            >
+                              {pub.sdg.toLowerCase().startsWith('sdg') ? pub.sdg : `SDG ${pub.sdg}`}
+                            </Badge>
                           </div>
                         )}
                         <Button variant="link" asChild className="p-0 h-auto text-xs">
-                          <a href={pub.link} className="flex items-center">
+                          <a href={pub.link} target="_blank" rel="noopener noreferrer" className="flex items-center">
                             View Publication
                             <ExternalLink className="ml-1 h-3 w-3" />
                           </a>
