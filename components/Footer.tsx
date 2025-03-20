@@ -1,11 +1,10 @@
-
 import Link from 'next/link';
 import { Facebook, Twitter, Linkedin, Mail } from 'lucide-react';
 
 export const Footer = () => {
   return (
     <div className="bg-slate-50 border-t border-slate-200/80">
-      <div className="page-container py-12 md:py-16">
+      <div className="page-container px-4 md:px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">J.E. Cairnes</h3>
