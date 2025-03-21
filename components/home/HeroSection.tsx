@@ -10,7 +10,7 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50"></div>
         <Image 
-          src="/ifip.jpg" 
+          src="/MotherEarth_Illustration_byAshishGoyal.png" 
           alt="Students collaborating on sustainable development project"
           className="w-full h-full object-cover"
           width={1920}
