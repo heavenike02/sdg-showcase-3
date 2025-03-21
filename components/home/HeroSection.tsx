@@ -6,6 +6,9 @@ import { ArrowRight } from "lucide-react"
 
 export function HeroSection() {
   return (
+    <div className="relative min-h-[80vh] flex flex-col">
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/40"></div>
     <div className="relative min-h-screen flex flex-col">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50"></div>
@@ -31,7 +34,7 @@ export function HeroSection() {
                 SDG Showcase
               </h1>
               <p className="text-lg text-white/90 max-w-xl">
-                At IFIP TC3, we&apos;re committed to driving innovation that advances the United Nations Sustainable Development Goals (SDGs) through the power of ICT. 
+                At IFIP TC3, we are committed to advancing the United Nations Sustainable Development Goals (SDGs). This site serves as a showcase of the work that TC3 members are undertaking across education, research, and community initiatives, each contributing to the achievement of the SDGs. 
               </p>
               <div className="pt-4">
                 <Button asChild size="lg" className="rounded-full px-8 h-12 bg-white text-foreground hover:bg-white/90">
@@ -40,17 +43,6 @@ export function HeroSection() {
                     <ArrowRight size={16} />
                   </Link>
                 </Button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6 pt-8 mt-8 border-t border-white/20">
-                <div>
-                  <p className="text-4xl font-normal text-white">20+</p>
-                  <p className="text-sm text-white/80">Collaborating institutions across Europe</p>
-                </div>
-                <div>
-                  <p className="text-4xl font-normal text-white">100+</p>
-                  <p className="text-sm text-white/80">Research projects supporting the SDGs</p>
-                </div>
               </div>
             </div>
           </div>
