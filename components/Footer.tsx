@@ -4,11 +4,11 @@ import { Facebook, Twitter, Linkedin, Mail } from 'lucide-react';
 export const Footer = () => {
   return (
     <div className="bg-slate-50 border-t border-slate-200/80">
-      <div className="page-container px-4 md:px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="container mx-auto max-w-7xl px-4 md:px-6 py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 justify-items-center text-center md:text-left">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">J.E. Cairnes</h3>
-            <p className="text-sm text-slate-600 max-w-xs">
+            <p className="text-sm text-slate-600 max-w-xs mx-auto md:mx-0">
               School of Business & Economics, committed to sustainable development and excellence in education.
             </p>
           </div>
@@ -27,7 +27,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                      <Link href="/contact" className="hover:text-primary transition-colors">
+                <Link href="/contact" className="hover:text-primary transition-colors">
                   Contact
                 </Link>
               </li>
@@ -36,7 +36,7 @@ export const Footer = () => {
           
           <div>
             <h4 className="font-medium mb-4">Connect</h4>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 justify-center md:justify-start">
               <a href="#" className="text-slate-600 hover:text-primary transition-colors">
                 <Facebook size={20} />
               </a>
