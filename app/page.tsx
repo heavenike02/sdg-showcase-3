@@ -11,8 +11,8 @@ const Index = () => {
     <div className="flex flex-col w-full">
       <Navbar />
       <HeroSection />
-      <AboutSection />
       <SdgImpactSection />
+      <AboutSection />
       <SdgFeaturesSection />
       <CommitteeSection />
       <NetworkSection />

@@ -24,7 +24,7 @@ function SdgCircleSkeleton() {
 
 export function SdgImpactSection() {
   return (
-    <section className="py-20 bg-secondary">
+    <section className="pt-8 pb-20 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading 
           title="Measuring our contributions" 
