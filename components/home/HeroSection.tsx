@@ -6,9 +6,6 @@ import { ArrowRight } from "lucide-react"
 
 export function HeroSection() {
   return (
-    <div className="relative min-h-[80vh] flex flex-col">
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/40"></div>
     <div className="relative min-h-screen flex flex-col">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/50"></div>
@@ -26,7 +23,6 @@ export function HeroSection() {
         <section className="flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="max-w-2xl space-y-6">
-              
               <Badge variant="secondary" className="bg-white/20 text-white border-white/10 hover:bg-white/30">
                 TC3 - Education Matters
               </Badge>
@@ -50,4 +46,4 @@ export function HeroSection() {
       </div>
     </div>
   )
-} 
+}
