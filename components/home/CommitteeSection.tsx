@@ -43,7 +43,6 @@ export function CommitteeSection() {
           title="Meet our Executive Committee" 
           subtitle="Executive Committee"
           center
-          description="Get to know the dedicated leaders driving sustainable development initiatives."
         />
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">

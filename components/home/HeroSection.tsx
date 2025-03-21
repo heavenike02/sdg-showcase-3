@@ -23,7 +23,7 @@ export function HeroSection() {
         <section className="flex-1 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="max-w-2xl space-y-6">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/10 hover:bg-white/30">
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/10 hover:bg-white/30 text-lg">
                 TC3 - Education Matters
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight text-white">

@@ -49,7 +49,7 @@ interface FeatureCardProps {
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="space-y-4">
-      <div className="text-primary">
+      <div className="text-primary/80">
         {icon}
       </div>
       <h3 className="text-xl">{title}</h3>

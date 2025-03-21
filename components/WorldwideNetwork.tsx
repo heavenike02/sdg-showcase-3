@@ -138,7 +138,7 @@ export function WorldwideNetwork() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <div className="flex flex-wrap justify-center gap-4 mb-6">
+          <div className="flex flex-wrap justify-center gap-4">
             <div className="flex items-center bg-primary/10 rounded-full px-4 py-1">
               <span className="w-2 h-2 rounded-full bg-primary mr-2"></span>
               <span className="text-sm font-medium">45+ Countries</span>
@@ -152,11 +152,6 @@ export function WorldwideNetwork() {
               <span className="text-sm font-medium">Global Collaboration</span>
             </div>
           </div>
-          
-          <p className="text-sm text-muted-foreground">
-            Our global network enables collaboration across borders, bringing together
-            diverse perspectives to advance educational technology worldwide.
-          </p>
         </motion.div>
       </div>
     </div>

@@ -15,7 +15,7 @@ export function SectionHeading({
     <div className={`flex flex-col space-y-3 mb-8 ${center ? 'text-center' : ''}`}>
       <div className={`flex items-center ${center ? 'justify-center' : ''}`}>
         <span className="dot-indicator"></span>
-        <div className="w-2 h-2 rounded-full bg-primary mx-2"></div>
+        <div className="w-2 h-2 rounded-full bg-primary/80 mx-2"></div>
         <span className="text-sm font-medium text-foreground">{subtitle}</span>
       </div>
       <h2 className="text-3xl md:text-4xl">{title}</h2>

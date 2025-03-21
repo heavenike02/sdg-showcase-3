@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Facebook, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Linkedin } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -7,9 +7,10 @@ export const Footer = () => {
       <div className="container mx-auto max-w-7xl px-4 md:px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 justify-items-center text-center md:text-left">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">J.E. Cairnes</h3>
+            <h3 className="text-lg font-semibold">International Federation for Information Processing</h3>
             <p className="text-sm text-slate-600 max-w-xs mx-auto md:mx-0">
-              School of Business & Economics, committed to sustainable development and excellence in education.
+              Technical Committee 3<br />
+              ICT and Education.
             </p>
           </div>
           
@@ -37,17 +38,13 @@ export const Footer = () => {
           <div>
             <h4 className="font-medium mb-4">Connect</h4>
             <div className="flex space-x-4 justify-center md:justify-start">
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">
-                <Facebook size={20} />
+              <a href="https://twitter.com/ifip_tc3" className="text-slate-600 hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" version="1.1" width="20" height="20" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
               </a>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">
-                <Twitter size={20} />
-              </a>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">
+              <a href="https://www.linkedin.com/company/ifip--international-federation-for-information-processing/" className="text-slate-600 hover:text-primary transition-colors">
                 <Linkedin size={20} />
-              </a>
-              <a href="#" className="text-slate-600 hover:text-primary transition-colors">
-                <Mail size={20} />
               </a>
             </div>
           </div>
@@ -55,10 +52,11 @@ export const Footer = () => {
           <div>
             <h4 className="font-medium mb-4">Contact</h4>
             <address className="text-sm text-slate-600 not-italic">
-              University Road<br />
-              Galway, Ireland<br />
-              <a href="tel:+35391524411" className="hover:text-primary transition-colors">
-                +353 91 524411
+              <a href="https://www.ifip-tc3.net/contact" className="hover:text-primary transition-colors block mb-2">
+                www.ifip-tc3.net/contact
+              </a>
+              <a href="mailto:ifip-tc3@ifip.org" className="hover:text-primary transition-colors">
+                ifip-tc3@ifip.org
               </a>
             </address>
           </div>
@@ -66,7 +64,7 @@ export const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-slate-200/80">
           <p className="text-sm text-slate-600 text-center">
-            © {new Date().getFullYear()} J.E. Cairnes School of Business & Economics. All rights reserved.
+            © {new Date().getFullYear()} IFIP TC3. All rights reserved.
           </p>
         </div>
       </div>
