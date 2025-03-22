@@ -53,7 +53,7 @@ export const Navbar = () => {
                 Search Profiles
               </Link>
               <Button asChild variant="outline" className="w-full bg-transparent text-white border-white hover:bg-white hover:text-foreground">
-                <Link href="/contact" onClick={toggleMenu}>
+                <Link href="https://www.ifip-tc3.org/about-1/contact/" onClick={toggleMenu}>
                   Contact Us
                 </Link>
               </Button>
