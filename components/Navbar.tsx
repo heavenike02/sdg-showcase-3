@@ -25,7 +25,7 @@ export const Navbar = () => {
               Search Profiles
             </Link>
             <Button asChild variant="outline" className="bg-transparent text-white border-white hover:bg-white hover:text-foreground">
-              <Link href="/contact">Contact Us</Link>
+              <Link href="https://www.ifip-tc3.org/about-1/contact/">Contact Us</Link>
             </Button>
           </div>
 
