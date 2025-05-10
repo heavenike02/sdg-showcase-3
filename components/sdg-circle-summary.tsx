@@ -180,7 +180,8 @@ export default function SdgCircleSummary({
           </div>
         )}
 
-        <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle" title="SDG Goals Circle">
+        <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle">
+          <title>SDG Goals Circle</title>
           {sdgGoals.map((goal, index) => {
             const angle = (index * 360) / sdgGoals.length
             const nextAngle = ((index + 1) * 360) / sdgGoals.length
@@ -208,7 +209,6 @@ export default function SdgCircleSummary({
                   "transition-all duration-200",
                   hasResearchersForGoal ? "cursor-pointer" : "cursor-not-allowed"
                 )}
-                role="button"
                 aria-label={`SDG Goal ${goal.id}: ${goal.name}`}
                 tabIndex={0}
               >
