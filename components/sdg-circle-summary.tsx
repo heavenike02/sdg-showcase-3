@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { cn } from "@/lib/utils"
-import { ChevronLeft, Search, Globe, Users, Info } from "lucide-react"
+import { ChevronLeft, Search, Globe, Users, Info, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { sdgGoals } from "@/lib/sdg-data"
@@ -93,45 +93,45 @@ export default function SdgCircleSummary({
         </div>
         
         <div className="flex flex-wrap gap-3">
-          {activeSDGs.length > 0 ? (
-            activeSDGs.map(sdgId => {
-              const goal = sdgGoals[sdgId - 1]
-              const researcherCount = getResearcherCount(sdgId)
-              const targetCount = getTargetsWithResearchers(sdgId).length
-              
-              return (
-                <div 
-                  key={sdgId}
-                  className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
-                  onClick={() => handleGoalClick(sdgId)}
-                  role="button"
-                  tabIndex={0}
+          {sdgGoals.map(goal => {
+            const researcherCount = getResearcherCount(goal.id);
+            const targetCount = getTargetsWithResearchers(goal.id).length;
+            const isActive = researcherCount > 0;
+            return (
+              <button
+                key={goal.id}
+                className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
+                onClick={isActive ? () => handleGoalClick(goal.id) : undefined}
+                onKeyDown={isActive ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleGoalClick(goal.id); } : undefined}
+                type="button"
+                disabled={!isActive}
+                style={{ opacity: isActive ? 1 : 0.5, cursor: isActive ? "pointer" : "not-allowed" }}
+                aria-label={isActive ? `View SDG ${goal.id}: ${goal.name}` : `Locked SDG ${goal.id}: ${goal.name}`}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                  style={{ backgroundColor: goal.color }}
                 >
-                  <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                    style={{ backgroundColor: goal.color }}
-                  >
-                    {goal.id}
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium">{goal.name}</p>
-                    <div className="flex items-center gap-1 mt-1">
+                  {isActive ? goal.id : <Lock className="w-5 h-5" />}
+                </div>
+                <div>
+                  <p className="text-xs font-medium">{goal.name}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {isActive && (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4">
                         {researcherCount} {researcherCount === 1 ? 'Researcher' : 'Researchers'}
                       </Badge>
-                      {targetCount > 0 && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                    )}
+                    {isActive && targetCount > 0 && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                           {targetCount} {targetCount === 1 ? 'Target' : 'Targets'}
                         </Badge>
                       )}
                     </div>
                   </div>
-                </div>
+                </button>
               )
-            })
-          ) : (
-            <p className="text-sm text-muted-foreground">No SDG research activity found.</p>
-          )}
+            })}
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function SdgCircleSummary({
           </div>
         )}
 
-        <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle">
+        <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle" title="SDG Goals Circle">
           {sdgGoals.map((goal, index) => {
             const angle = (index * 360) / sdgGoals.length
             const nextAngle = ((index + 1) * 360) / sdgGoals.length
@@ -201,6 +201,7 @@ export default function SdgCircleSummary({
               <g
                 key={goal.id}
                 onClick={() => handleGoalClick(goal.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleGoalClick(goal.id); }}
                 onMouseEnter={() => setHoveredGoal(goal.id)}
                 onMouseLeave={() => setHoveredGoal(null)}
                 className={cn(
@@ -311,6 +312,7 @@ export default function SdgCircleSummary({
             <button 
               onClick={handleBackClick}
               className="flex items-center gap-2 text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+              type="button"
             >
               <ChevronLeft className="h-5 w-5" />
               <span>Back</span>
