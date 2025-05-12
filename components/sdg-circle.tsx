@@ -7,7 +7,7 @@ import { ChevronLeft, Info, Search, Lock, Globe } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { sdgGoals, SdgTarget } from "@/lib/sdg-data"
+import { sdgGoals, type SdgTarget } from "@/lib/sdg-data"
 import Link from "next/link"
 
 // Helper function to round numbers to 4 decimal places
@@ -47,7 +47,7 @@ export default function SdgCircle({
 
   // Get all SDGs that have at least one target with impact
   const contributedSdgs = Array.from(new Set(
-    targetImpacts.map(impact => parseInt(impact.targetId.split('.')[0]))
+    targetImpacts.map(impact => Number.parseInt(impact.targetId.split('.')[0]))
   )).sort((a, b) => a - b)
 
   const centerX = 250
@@ -171,6 +171,12 @@ export default function SdgCircle({
                   key={sdgId}
                   className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm"
                   onClick={() => handleGoalClick(sdgId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleGoalClick(sdgId)
+                      e.preventDefault() 
+                    }
+                  }}
                   role="button"
                   tabIndex={0}
                 >
@@ -223,8 +229,8 @@ export default function SdgCircle({
             </Tooltip>
           </TooltipProvider>
           
-          {recommendedTags.map((tag, idx) => (
-            <Badge key={idx} variant="outline" className="rounded-md border-primary/30 bg-primary/5">
+          {recommendedTags.map((tag) => (
+            <Badge key={tag} variant="outline" className="rounded-md border-primary/30 bg-primary/5">
               {tag}
             </Badge>
           ))}
@@ -256,15 +262,6 @@ export default function SdgCircle({
                       {getGoalImpactScore(hoveredGoal)}% Positive
                     </span>
                   </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2 h-7 text-xs pointer-events-auto"
-                    onClick={() => handleGoalClick(hoveredGoal)}
-                  >
-                    View Targets
-                  </Button>
                 </>
               ) : (
                 <div className="flex flex-col items-center mt-2">
@@ -282,6 +279,7 @@ export default function SdgCircle({
         )}
 
         <svg viewBox="0 0 500 500" className="w-full h-full" aria-label="SDG Goals Circle">
+          <title>SDG Goals Circle</title>
           {sdgGoals.map((goal, index) => {
             const angle = (index * 360) / sdgGoals.length
             const nextAngle = ((index + 1) * 360) / sdgGoals.length
@@ -304,6 +302,12 @@ export default function SdgCircle({
                 onClick={() => handleGoalClick(goal.id)}
                 onMouseEnter={() => setHoveredGoal(goal.id)}
                 onMouseLeave={() => setHoveredGoal(null)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleGoalClick(goal.id)
+                    e.preventDefault()
+                  }
+                }}
                 className={cn(
                   "transition-all duration-200",
                   hasContribution ? "cursor-pointer" : "cursor-not-allowed"
@@ -410,6 +414,7 @@ export default function SdgCircle({
             style={{ backgroundColor: sdgGoals[selectedGoal - 1].color }}
           >
             <button 
+              type="button"
               onClick={handleBackClick}
               className="flex items-center gap-2 text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
             >
@@ -514,5 +519,3 @@ export default function SdgCircle({
     </div>
   )
 }
-
-

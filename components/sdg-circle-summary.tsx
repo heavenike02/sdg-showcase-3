@@ -157,14 +157,7 @@ export default function SdgCircleSummary({
                     </span>
                   </div>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2 h-7 text-xs pointer-events-auto"
-                    onClick={() => handleGoalClick(hoveredGoal)}
-                  >
-                    View Details
-                  </Button>
+                  {/* The 'View Details' button previously here has been removed */}
                 </>
               ) : (
                 <div className="flex flex-col items-center mt-2">
