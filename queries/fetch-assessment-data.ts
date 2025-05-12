@@ -273,11 +273,11 @@ export async function fetchSdgSummaryData() {
   try {
     const sql = neon(DATABASE_URL);
     
-    // Get all assessments with targets - using a simpler query
+    // Get all assessments with targets - using a more flexible query that doesn't assume array format
     const assessments = await sql`
       SELECT id, targets
       FROM assessments 
-      WHERE targets IS NOT NULL AND jsonb_array_length(targets::jsonb) > 0
+      WHERE targets IS NOT NULL
     `;
     
     if (!assessments || assessments.length === 0) {
@@ -286,9 +286,24 @@ export async function fetchSdgSummaryData() {
     
     console.log(`Found ${assessments.length} assessments with targets`);
     
-    // Log the first assessment's targets to understand the structure
+    // Enhanced debugging to understand the data structure
     if (assessments.length > 0) {
-      console.log('Sample assessment targets:', JSON.stringify(assessments[0].targets, null, 2));
+      // Log detailed info about each assessment's targets
+      assessments.forEach((assessment, index) => {
+        console.log(`Assessment ${index + 1} (ID: ${assessment.id}):`)
+        console.log(` - targets type: ${typeof assessment.targets}`)
+        console.log(` - targets value:`, assessment.targets)
+        
+        // Try to parse if it's a string
+        if (typeof assessment.targets === 'string') {
+          try {
+            const parsed = JSON.parse(assessment.targets);
+            console.log(` - parsed targets:`, parsed);
+          } catch (e) {
+            console.log(` - could not parse targets as JSON`);
+          }
+        }
+      });
     }
     
     // Define TypeScript interfaces
@@ -315,11 +330,50 @@ export async function fetchSdgSummaryData() {
       try {
         // Parse the targets data depending on its format
         if (typeof assessment.targets === 'string') {
-          targetObjects = JSON.parse(assessment.targets);
-        } else if (Array.isArray(assessment.targets)) {
+          try {
+            const parsed = JSON.parse(assessment.targets);
+            
+            // Handle array format (TargetImpact[])
+            if (Array.isArray(parsed)) {
+              targetObjects = parsed;
+            } 
+            // Handle object format (Record<string, string[]>)
+            else if (parsed && typeof parsed === 'object') {
+              // Convert Record<string, string[]> to array of target objects
+              for (const [sdgId, targets] of Object.entries(parsed)) {
+                if (Array.isArray(targets)) {
+                  targets.forEach(targetNum => {
+                    targetObjects.push({
+                      targetId: `${sdgId}.${targetNum}`,
+                      impactType: 'positive', // Default values
+                      impactDirection: 'direct'
+                    });
+                  });
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Error parsing targets JSON:', err);
+          }
+        } 
+        // Handle direct array (already parsed)
+        else if (Array.isArray(assessment.targets)) {
           targetObjects = assessment.targets;
-        } else if (assessment.targets && typeof assessment.targets === 'object') {
-          targetObjects = Array.isArray(assessment.targets) ? assessment.targets : [assessment.targets];
+        } 
+        // Handle direct object (Record<string, string[]>)
+        else if (assessment.targets && typeof assessment.targets === 'object' && !Array.isArray(assessment.targets)) {
+          // Convert Record<string, string[]> to array of target objects
+          for (const [sdgId, targets] of Object.entries(assessment.targets)) {
+            if (Array.isArray(targets)) {
+              targets.forEach(targetNum => {
+                targetObjects.push({
+                  targetId: `${sdgId}.${targetNum}`,
+                  impactType: 'positive', // Default values
+                  impactDirection: 'direct'
+                });
+              });
+            }
+          }
         }
       } catch (err) {
         console.error('Error parsing targets:', err);
@@ -349,8 +403,8 @@ export async function fetchSdgSummaryData() {
         }
         
         // Extract SDG number from target (e.g., "3.1" -> 3)
-        const sdgId = parseInt(targetId.split('.')[0]);
-        if (isNaN(sdgId)) {
+        const sdgId = Number.parseInt(targetId.split('.')[0], 10);
+        if (Number.isNaN(sdgId)) {
           console.warn('Could not parse SDG ID from target:', targetId);
           continue;
         }
@@ -365,12 +419,16 @@ export async function fetchSdgSummaryData() {
           });
         }
         
-        const sdgData = sdgSummary.get(sdgId)!;
+        const sdgData = sdgSummary.get(sdgId);
+        if (!sdgData) {
+          console.warn(`SDG data not found for ID: ${sdgId}`);
+          continue;
+        }
         
         // Increment researcher count for this SDG (only once per assessment)
-        if (!sdgData.processedAssessmentIds!.has(assessment.id)) {
+        if (sdgData.processedAssessmentIds && !sdgData.processedAssessmentIds.has(assessment.id)) {
           sdgData.researcherCount++;
-          sdgData.processedAssessmentIds!.add(assessment.id);
+          sdgData.processedAssessmentIds.add(assessment.id);
         }
         
         // Track target counts
@@ -383,10 +441,12 @@ export async function fetchSdgSummaryData() {
         }
         
         // Increment researcher count for this target (only once per assessment)
-        const targetData = sdgData.targetCounts.get(targetId)!;
-        if (!targetData.processedAssessmentIds!.has(assessment.id)) {
-          targetData.researcherCount++;
-          targetData.processedAssessmentIds!.add(assessment.id);
+        const targetData = sdgData.targetCounts.get(targetId)
+        if (targetData && targetData.processedAssessmentIds) {
+          if (!targetData.processedAssessmentIds.has(assessment.id)) {
+            targetData.researcherCount++
+            targetData.processedAssessmentIds.add(assessment.id)
+          }
         }
       }
     }
